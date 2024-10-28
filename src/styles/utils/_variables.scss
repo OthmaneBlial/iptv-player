@@ -1,0 +1,29 @@
+:root {
+  --bg-color: #121212;
+  --text-color: #ffffff;
+  --accent-color: #1db954;
+  --header-height: 70px;
+  --sidebar-width: 300px;
+  --transition-speed: 0.2s;
+  --card-bg: #1f1f1f;
+  --card-hover: #2a2a2a;
+  --light-bg: #f5f5f5;
+  --light-text: #121212;
+  --input-bg: #2a2a2a;
+  --input-text: #ffffff;
+  --button-bg: #1db954;
+  --button-hover-bg: #17a74a;
+  --section-title-color: var(--accent-color);
+}
+
+[data-theme="light"] {
+  --bg-color: #f5f5f5;
+  --text-color: #121212;
+  --card-bg: #ffffff;
+  --card-hover: #e0e0e0;
+  --input-bg: #ffffff;
+  --input-text: #121212;
+  --button-bg: #1db954;
+  --button-hover-bg: #17a74a;
+  --section-title-color: var(--accent-color);
+}
