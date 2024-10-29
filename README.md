@@ -2,6 +2,14 @@
 
 A modern IPTV player built with **TypeScript**, **Sass**, **HLS.js**, **Babel**, and **Webpack**.
 
+Additionally, you can use the IPTV playlist from the following source: https://iptv-org.github.io/iptv/index.m3u. This playlist provides a vast collection of IPTV channels from around the world, which you can easily integrate into your IPTV Player application.
+
+## DEMO
+
+https://www.othmaneblial.xyz/iptv
+
+![alt text](demo.png)
+
 ## Features
 
 - **Channel Playback**: Load M3U/M3U8 playlists, filter and play channels with HLS support.
