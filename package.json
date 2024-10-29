@@ -17,7 +17,7 @@
     "Webpack",
     "HLS.js"
   ],
-  "author": "",
+  "author": "Othmane BLIAL",
   "license": "ISC",
   "devDependencies": {
     "@babel/core": "^7.25.8",
