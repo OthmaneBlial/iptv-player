@@ -6,8 +6,6 @@ Additionally, you can use the IPTV playlist from the following source: https://i
 
 ## DEMO
 
-https://www.othmaneblial.xyz/iptv
-
 ![alt text](demo.png)
 
 ## Features
