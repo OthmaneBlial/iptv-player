@@ -39,12 +39,34 @@
     max-width: 560px;
   }
 
+  .player-meta-top {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.35rem;
+  }
+
   .player-kicker {
     font-size: 0.76rem;
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: #7be495;
-    margin-bottom: 0.5rem;
+  }
+
+  .player-badges {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .player-badge {
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.86);
+    font-size: 0.74rem;
+    letter-spacing: 0.04em;
   }
 
   h2 {
@@ -80,7 +102,8 @@
     z-index: 10;
 
     button,
-    input[type="range"] {
+    input[type="range"],
+    .player-select {
       padding: 10px 15px;
       background-color: rgba(0, 0, 0, 0.6);
       border: none;
@@ -98,9 +121,15 @@
       }
     }
 
+    .player-select {
+      min-width: 148px;
+      appearance: none;
+    }
+
     [data-theme="light"] & {
       button,
-      input[type="range"] {
+      input[type="range"],
+      .player-select {
         background-color: rgba(255, 255, 255, 0.6);
         color: #121212;
 
@@ -134,6 +163,11 @@
   .player-overlay {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .controls {
+    flex-wrap: wrap;
+    right: 10px;
   }
 
   .resume-button {

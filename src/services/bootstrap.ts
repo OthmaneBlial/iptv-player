@@ -121,9 +121,25 @@ export function bootstrapAppState(): void {
     },
     history,
     player: {
+      audioTracks: [
+        {
+          label: "Default Audio",
+          value: -1,
+        },
+      ],
       currentChannel: lastPlayed,
       errorMessage: null,
+      networkStatus: navigator.onLine === false ? "offline" : "online",
       preferences,
+      qualityLevels: [
+        {
+          label: "Auto Quality",
+          value: -1,
+        },
+      ],
+      retries: 0,
+      selectedAudioTrack: -1,
+      selectedQuality: -1,
       status: "idle",
     },
     playlists,

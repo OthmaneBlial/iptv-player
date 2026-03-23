@@ -1,11 +1,13 @@
 import Hls from "hls.js";
 import { appStore } from "../store/appStore";
-import { LastPlayedChannel } from "../types/models";
+import { LastPlayedChannel, PlayerTrackOption } from "../types/models";
 import { addToHistory } from "../utils/history";
 import {
   setLastPlayedChannel,
   setPlayerPreferences,
 } from "../utils/storage";
+
+const MAX_RETRIES = 2;
 
 let hls: Hls | null = null;
 let video: HTMLVideoElement | null = null;
@@ -14,11 +16,24 @@ let volumeSlider: HTMLInputElement | null = null;
 let currentChannelName: HTMLElement | null = null;
 let playerStatus: HTMLElement | null = null;
 let resumeButton: HTMLButtonElement | null = null;
+let qualitySelect: HTMLSelectElement | null = null;
+let audioTrackSelect: HTMLSelectElement | null = null;
+let retryButton: HTMLButtonElement | null = null;
+let playerStatusBadge: HTMLElement | null = null;
+let playerNetworkBadge: HTMLElement | null = null;
+let playerRetriesBadge: HTMLElement | null = null;
+let lastRequestedChannel: LastPlayedChannel | null = null;
 
 function teardownHls(): void {
   if (hls) {
     hls.destroy();
     hls = null;
+  }
+
+  if (video) {
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
   }
 }
 
@@ -48,7 +63,16 @@ function updateMuteButton(): void {
 
 function renderPlayerState(): void {
   const { player } = appStore.getState();
-  if (!currentChannelName || !playerStatus || !resumeButton) {
+  if (
+    !currentChannelName ||
+    !playerStatus ||
+    !resumeButton ||
+    !qualitySelect ||
+    !audioTrackSelect ||
+    !playerStatusBadge ||
+    !playerNetworkBadge ||
+    !playerRetriesBadge
+  ) {
     return;
   }
 
@@ -62,6 +86,25 @@ function renderPlayerState(): void {
     resumeButton.hidden = true;
     resumeButton.textContent = "Resume";
   }
+
+  qualitySelect.innerHTML = player.qualityLevels
+    .map(
+      (option) => `<option value="${option.value}">${option.label}</option>`
+    )
+    .join("");
+  qualitySelect.value = player.selectedQuality.toString();
+
+  audioTrackSelect.innerHTML = player.audioTracks
+    .map(
+      (option) => `<option value="${option.value}">${option.label}</option>`
+    )
+    .join("");
+  audioTrackSelect.value = player.selectedAudioTrack.toString();
+
+  playerStatusBadge.textContent = player.status.toUpperCase();
+  playerNetworkBadge.textContent =
+    player.networkStatus === "offline" ? "Offline" : "Online";
+  playerRetriesBadge.textContent = `Retries ${player.retries}/${MAX_RETRIES}`;
 
   if (player.status === "loading") {
     playerStatus.textContent = "Connecting to stream...";
@@ -86,48 +129,139 @@ function renderPlayerState(): void {
 
 function syncStoredChannel(channel: LastPlayedChannel): void {
   appStore.setPlayer({
+    audioTracks: [
+      {
+        label: "Default Audio",
+        value: -1,
+      },
+    ],
     currentChannel: channel,
     errorMessage: null,
+    qualityLevels: [
+      {
+        label: "Auto Quality",
+        value: -1,
+      },
+    ],
+    retries: 0,
+    selectedAudioTrack: -1,
+    selectedQuality: -1,
     status: "loading",
   });
   setLastPlayedChannel(channel);
 }
 
 export function playChannel(url: string, channelName: string): void {
-  if (!video) {
-    return;
-  }
-
   const currentChannel = {
     name: channelName,
     playedAt: new Date().toISOString(),
     url,
   };
+  startPlayback(currentChannel, {
+    persistHistory: true,
+    resetRetries: true,
+  });
+}
 
+function startPlayback(
+  currentChannel: LastPlayedChannel,
+  options: {
+    persistHistory: boolean;
+    resetRetries: boolean;
+  }
+): void {
+  if (!video) {
+    return;
+  }
+
+  lastRequestedChannel = currentChannel;
   syncStoredChannel(currentChannel);
+  if (!options.resetRetries) {
+    appStore.setPlayer({
+      retries: appStore.getState().player.retries,
+    });
+  }
   teardownHls();
 
   if (Hls.isSupported()) {
-    hls = new Hls();
-    hls.loadSource(url);
+    hls = new Hls({
+      enableWorker: true,
+      lowLatencyMode: true,
+    });
+    hls.loadSource(currentChannel.url);
     hls.attachMedia(video);
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
       video?.play().catch((error) => {
         console.error("Autoplay failed.", error);
       });
     });
+    hls.on(Hls.Events.LEVELS_UPDATED, (_, data) => {
+      const qualityLevels: PlayerTrackOption[] = [
+        {
+          label: "Auto Quality",
+          value: -1,
+        },
+        ...data.levels.map((level, index) => ({
+          label: level.height
+            ? `${level.height}p`
+            : `${Math.round(level.bitrate / 1000)} kbps`,
+          value: index,
+        })),
+      ];
+      appStore.setPlayer({
+        qualityLevels,
+      });
+    });
+    hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (_, data) => {
+      const audioTracks: PlayerTrackOption[] = [
+        {
+          label: "Default Audio",
+          value: -1,
+        },
+        ...data.audioTracks.map((track, index) => ({
+          label:
+            track.name ||
+            track.lang ||
+            `Audio ${index + 1}`,
+          value: index,
+        })),
+      ];
+      appStore.setPlayer({
+        audioTracks,
+      });
+    });
+    hls.on(Hls.Events.LEVEL_SWITCHED, (_, data) => {
+      appStore.setPlayer({
+        selectedQuality: data.level,
+      });
+    });
+    hls.on(Hls.Events.AUDIO_TRACK_SWITCHED, (_, data) => {
+      appStore.setPlayer({
+        selectedAudioTrack: data.id,
+      });
+    });
     hls.on(Hls.Events.ERROR, (_, data) => {
       if (!data.fatal) {
         return;
       }
-
-      appStore.setPlayer({
-        errorMessage: "This stream could not be played in HLS mode.",
-        status: "error",
-      });
+      handlePlaybackRetry("This stream could not be played in HLS mode.");
     });
   } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-    video.src = url;
+    video.src = currentChannel.url;
+    appStore.setPlayer({
+      audioTracks: [
+        {
+          label: "Native Audio",
+          value: -1,
+        },
+      ],
+      qualityLevels: [
+        {
+          label: "Native Quality",
+          value: -1,
+        },
+      ],
+    });
     video.onloadedmetadata = () => {
       video?.play().catch((error) => {
         console.error("Autoplay failed.", error);
@@ -142,7 +276,43 @@ export function playChannel(url: string, channelName: string): void {
     return;
   }
 
-  addToHistory(channelName, url);
+  if (options.persistHistory) {
+    addToHistory(currentChannel.name, currentChannel.url);
+  }
+}
+
+function handlePlaybackRetry(errorMessage: string): void {
+  const retries = appStore.getState().player.retries;
+  if (!lastRequestedChannel || retries >= MAX_RETRIES) {
+    appStore.setPlayer({
+      errorMessage,
+      status: "error",
+    });
+    return;
+  }
+
+  appStore.setPlayer({
+    errorMessage: `Retrying playback (${retries + 1}/${MAX_RETRIES})...`,
+    retries: retries + 1,
+    status: "loading",
+  });
+
+  window.setTimeout(() => {
+    if (!lastRequestedChannel) {
+      return;
+    }
+
+    startPlayback(
+      {
+        ...lastRequestedChannel,
+        playedAt: new Date().toISOString(),
+      },
+      {
+        persistHistory: false,
+        resetRetries: false,
+      }
+    );
+  }, 900);
 }
 
 export function initializePlayerService(): void {
@@ -156,12 +326,33 @@ export function initializePlayerService(): void {
   resumeButton = document.getElementById(
     "resumeLastChannel"
   ) as HTMLButtonElement | null;
+  qualitySelect = document.getElementById(
+    "qualitySelect"
+  ) as HTMLSelectElement | null;
+  audioTrackSelect = document.getElementById(
+    "audioTrackSelect"
+  ) as HTMLSelectElement | null;
+  retryButton = document.getElementById(
+    "retryPlayback"
+  ) as HTMLButtonElement | null;
+  playerStatusBadge = document.getElementById("playerStatusBadge");
+  playerNetworkBadge = document.getElementById("playerNetworkBadge");
+  playerRetriesBadge = document.getElementById("playerRetriesBadge");
   const pipButton = document.getElementById("pipButton") as HTMLButtonElement | null;
   const fullscreenButton = document.getElementById(
     "fullscreenButton"
   ) as HTMLButtonElement | null;
 
-  if (!video || !muteButton || !volumeSlider || !pipButton || !fullscreenButton) {
+  if (
+    !video ||
+    !muteButton ||
+    !volumeSlider ||
+    !pipButton ||
+    !fullscreenButton ||
+    !qualitySelect ||
+    !audioTrackSelect ||
+    !retryButton
+  ) {
     return;
   }
 
@@ -218,6 +409,49 @@ export function initializePlayerService(): void {
     persistPreferences();
   });
 
+  qualitySelect.addEventListener("change", (event) => {
+    const selectedQuality = parseInt(
+      (event.target as HTMLSelectElement).value,
+      10
+    );
+    appStore.setPlayer({
+      selectedQuality,
+    });
+    if (hls) {
+      hls.currentLevel = selectedQuality;
+    }
+  });
+
+  audioTrackSelect.addEventListener("change", (event) => {
+    const selectedAudioTrack = parseInt(
+      (event.target as HTMLSelectElement).value,
+      10
+    );
+    appStore.setPlayer({
+      selectedAudioTrack,
+    });
+    if (hls && selectedAudioTrack >= 0) {
+      hls.audioTrack = selectedAudioTrack;
+    }
+  });
+
+  retryButton.addEventListener("click", () => {
+    if (!lastRequestedChannel) {
+      return;
+    }
+
+    startPlayback(
+      {
+        ...lastRequestedChannel,
+        playedAt: new Date().toISOString(),
+      },
+      {
+        persistHistory: false,
+        resetRetries: true,
+      }
+    );
+  });
+
   video.addEventListener("play", () => {
     appStore.setPlayer({
       errorMessage: null,
@@ -232,10 +466,7 @@ export function initializePlayerService(): void {
   });
 
   video.addEventListener("error", () => {
-    appStore.setPlayer({
-      errorMessage: "Playback hit an error. Try another stream.",
-      status: "error",
-    });
+    handlePlaybackRetry("Playback hit an error. Try another stream.");
   });
 
   resumeButton?.addEventListener("click", () => {
@@ -254,6 +485,20 @@ export function initializePlayerService(): void {
     }
 
     playChannel(detail.url, detail.name);
+  });
+
+  window.addEventListener("online", () => {
+    appStore.setPlayer({
+      networkStatus: "online",
+    });
+  });
+
+  window.addEventListener("offline", () => {
+    appStore.setPlayer({
+      errorMessage: "You appear to be offline.",
+      networkStatus: "offline",
+      status: "error",
+    });
   });
 
   appStore.subscribe(() => {

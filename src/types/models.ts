@@ -51,10 +51,21 @@ export interface LastPlayedChannel {
 
 export type PlayerStatus = "idle" | "loading" | "playing" | "error";
 
+export interface PlayerTrackOption {
+  label: string;
+  value: number;
+}
+
 export interface PlayerState {
+  audioTracks: PlayerTrackOption[];
   currentChannel: LastPlayedChannel | null;
   errorMessage: string | null;
+  networkStatus: "offline" | "online";
   preferences: PlayerPreferences;
+  qualityLevels: PlayerTrackOption[];
+  retries: number;
+  selectedAudioTrack: number;
+  selectedQuality: number;
   status: PlayerStatus;
 }
 

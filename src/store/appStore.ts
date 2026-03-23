@@ -17,12 +17,28 @@ let state: AppState = {
   },
   history: [],
   player: {
+    audioTracks: [
+      {
+        label: "Default Audio",
+        value: -1,
+      },
+    ],
     currentChannel: null,
     errorMessage: null,
+    networkStatus: "online",
     preferences: {
       muted: false,
       volume: 1,
     },
+    qualityLevels: [
+      {
+        label: "Auto Quality",
+        value: -1,
+      },
+    ],
+    retries: 0,
+    selectedAudioTrack: -1,
+    selectedQuality: -1,
     status: "idle",
   },
   playlists: [],

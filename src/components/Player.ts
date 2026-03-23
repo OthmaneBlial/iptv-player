@@ -7,7 +7,14 @@ export function Player(): HTMLElement {
   container.innerHTML = `
     <div class="player-overlay">
       <div class="player-meta">
-        <p class="player-kicker">Stream Deck</p>
+        <div class="player-meta-top">
+          <p class="player-kicker">Stream Deck</p>
+          <div class="player-badges">
+            <span id="playerStatusBadge" class="player-badge">Idle</span>
+            <span id="playerNetworkBadge" class="player-badge">Online</span>
+            <span id="playerRetriesBadge" class="player-badge">Retries 0</span>
+          </div>
+        </div>
         <h2 id="currentChannelName">${
           lastPlayedChannel?.name || "Select a channel to start watching"
         }</h2>
@@ -17,11 +24,15 @@ export function Player(): HTMLElement {
             : "Load a playlist, browse channels, and start playback."
         }</p>
       </div>
-      ${
-        lastPlayedChannel
-          ? `<button id="resumeLastChannel" class="resume-button">Resume ${lastPlayedChannel.name}</button>`
-          : ""
-      }
+      <button id="resumeLastChannel" class="resume-button"${
+        lastPlayedChannel ? "" : " hidden"
+      }>
+        ${
+          lastPlayedChannel
+            ? `Resume ${lastPlayedChannel.name}`
+            : "Resume last channel"
+        }
+      </button>
     </div>
     <div class="controls">
       <button id="pipButton">
@@ -36,6 +47,15 @@ export function Player(): HTMLElement {
         </button>
         <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="1" />
       </div>
+      <select id="qualitySelect" class="player-select">
+        <option value="-1">Auto Quality</option>
+      </select>
+      <select id="audioTrackSelect" class="player-select">
+        <option value="-1">Default Audio</option>
+      </select>
+      <button id="retryPlayback">
+        <i class="fas fa-rotate-right"></i> Retry
+      </button>
     </div>
     <video id="videoPlayer" controls></video>
   `;
