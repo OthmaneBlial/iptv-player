@@ -19,7 +19,7 @@
     "HLS.js"
   ],
   "author": "Othmane BLIAL",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.25.8",
     "@babel/preset-env": "^7.25.8",

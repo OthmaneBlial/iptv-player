@@ -217,4 +217,4 @@ Typical paths:
 
 ## License
 
-ISC
+MIT
