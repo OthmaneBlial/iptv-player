@@ -5,6 +5,7 @@ import {
   setStoredFavorites,
   setStoredHistory,
   setStoredPlaylistLibrary,
+  setStoredSourceHealth,
   setStoredTheme,
 } from "./storage";
 
@@ -25,6 +26,7 @@ interface SyncPayload {
     history: ReturnType<typeof getSyncableState>["history"];
     playerPreferences: ReturnType<typeof getSyncableState>["playerPreferences"];
     playlists: ReturnType<typeof getSyncableState>["playlists"];
+    sourceHealth?: ReturnType<typeof getSyncableState>["sourceHealth"];
     theme: ReturnType<typeof getSyncableState>["theme"];
   };
 }
@@ -41,6 +43,7 @@ function getSyncableState() {
     history: state.history,
     playerPreferences: state.player.preferences,
     playlists: state.playlists,
+    sourceHealth: state.sourceHealth,
     theme: state.theme,
   };
 }
@@ -97,6 +100,7 @@ function buildPayload(): SyncPayload {
 
 function applyPayload(payload: SyncPayload): void {
   const currentState = appStore.getState();
+  const sourceHealth = payload.state.sourceHealth || [];
   const nextState = {
     ...currentState,
     activePlaylistId: payload.state.activePlaylistId,
@@ -105,6 +109,7 @@ function applyPayload(payload: SyncPayload): void {
     favorites: payload.state.favorites,
     history: payload.state.history,
     playlists: payload.state.playlists,
+    sourceHealth,
     theme: payload.state.theme,
     player: {
       ...currentState.player,
@@ -122,6 +127,7 @@ function applyPayload(payload: SyncPayload): void {
   setStoredHistory(payload.state.history);
   setStoredTheme(payload.state.theme);
   setStoredEpg(payload.state.epg);
+  setStoredSourceHealth(sourceHealth);
   setPlayerPreferences(payload.state.playerPreferences);
 }
 

@@ -37,6 +37,7 @@ describe("appStore", () => {
         status: "idle",
       },
       playlists: [],
+      sourceHealth: [],
       theme: "dark",
     });
   });
@@ -68,5 +69,25 @@ describe("appStore", () => {
         volume: 0.2,
       },
     });
+  });
+
+  it("stores source health entries", () => {
+    appStore.setSourceHealth([
+      {
+        checkedAt: "2026-01-01T00:00:00.000Z",
+        failures: 0,
+        lastFailureAt: null,
+        lastKnownName: "BBC World",
+        lastSuccessfulAt: "2026-01-01T00:00:00.000Z",
+        latencyMs: 240,
+        negativeReports: 0,
+        positiveReports: 1,
+        status: "healthy",
+        url: "https://example.com/live.m3u8",
+      },
+    ]);
+
+    expect(appStore.getState().sourceHealth).toHaveLength(1);
+    expect(appStore.getState().sourceHealth[0].status).toBe("healthy");
   });
 });

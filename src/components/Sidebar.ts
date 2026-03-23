@@ -109,6 +109,7 @@ export function Sidebar(): HTMLElement {
             </select>
             <select id="channelSort" class="channel-filter-select" aria-label="Sort channels">
               <option value="name">A-Z</option>
+              <option value="health">Source Health</option>
               <option value="recent">Recently Watched</option>
               <option value="favorites">Favorites First</option>
               <option value="group">Group Order</option>
@@ -120,7 +121,22 @@ export function Sidebar(): HTMLElement {
           <!-- Channels will be populated here -->
         </ul>
       </div>
-      <!-- Favorites Section -->
+      <div class="section">
+        <button class="list-title" type="button" data-target="sourceHealthList" aria-expanded="false">
+          Source Health <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="section-inline-tools">
+          <button id="scanSourceHealth" class="playlist-action-button" type="button">
+            <i class="fas fa-heart-pulse"></i> Scan Active Playlist
+          </button>
+        </div>
+        <p id="sourceHealthFeedback" class="playlist-feedback" data-tone="neutral" role="status" aria-live="polite">
+          Validate the active playlist and report dead channels to keep trusted streams on top.
+        </p>
+        <ul class="history-list collapsed" id="sourceHealthList">
+          <!-- Source health checks render here -->
+        </ul>
+      </div>
       <div class="section">
         <button class="list-title" type="button" data-target="diagnosticsList" aria-expanded="false">
           Diagnostics <i class="fas fa-chevron-down"></i>

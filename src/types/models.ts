@@ -54,6 +54,21 @@ export interface DiagnosticEntry {
   timestamp: string;
 }
 
+export type SourceHealthStatus = "healthy" | "offline" | "unknown" | "unstable";
+
+export interface SourceHealthEntry {
+  checkedAt: string | null;
+  failures: number;
+  lastFailureAt: string | null;
+  lastKnownName: string;
+  lastSuccessfulAt: string | null;
+  latencyMs: number | null;
+  negativeReports: number;
+  positiveReports: number;
+  status: SourceHealthStatus;
+  url: string;
+}
+
 export interface FavoriteRecord {
   url: string;
   addedAt: string;
@@ -102,7 +117,7 @@ export interface FilterState {
   group: string;
   language: string;
   query: string;
-  sort: "favorites" | "group" | "name" | "recent";
+  sort: "favorites" | "group" | "health" | "name" | "recent";
 }
 
 export interface AppState {
@@ -115,5 +130,6 @@ export interface AppState {
   history: HistoryItem[];
   player: PlayerState;
   playlists: PlaylistRecord[];
+  sourceHealth: SourceHealthEntry[];
   theme: ThemeMode;
 }

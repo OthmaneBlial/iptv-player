@@ -49,6 +49,7 @@ let state: AppState = {
     status: "idle",
   },
   playlists: [],
+  sourceHealth: [],
   theme: "dark",
 };
 
@@ -144,6 +145,14 @@ export const appStore = {
     state = {
       ...state,
       playlists,
+    };
+    emit();
+  },
+
+  setSourceHealth(sourceHealth: AppState["sourceHealth"]): void {
+    state = {
+      ...state,
+      sourceHealth,
     };
     emit();
   },

@@ -60,6 +60,9 @@ export function Player(): HTMLElement {
       <button id="retryPlayback" aria-label="Retry playback" aria-keyshortcuts="r">
         <i class="fas fa-rotate-right"></i> Retry
       </button>
+      <button id="reportCurrentStream" aria-label="Report current stream issue">
+        <i class="fas fa-triangle-exclamation"></i> Report Stream
+      </button>
     </div>
     <div id="guideDrawer" class="guide-drawer" aria-label="Guide drawer"></div>
     <video id="videoPlayer" controls aria-label="Video player"></video>

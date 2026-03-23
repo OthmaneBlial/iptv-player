@@ -4,6 +4,11 @@ import { LastPlayedChannel, PlayerTrackOption } from "../types/models";
 import { logDiagnostic } from "../utils/diagnostics";
 import { addToHistory } from "../utils/history";
 import {
+  markSourcePlaybackFailure,
+  markSourcePlaybackSuccess,
+  reportSourceIssue,
+} from "../utils/sourceHealth";
+import {
   setLastPlayedChannel,
   setPlayerPreferences,
 } from "../utils/storage";
@@ -23,7 +28,9 @@ let retryButton: HTMLButtonElement | null = null;
 let playerStatusBadge: HTMLElement | null = null;
 let playerNetworkBadge: HTMLElement | null = null;
 let playerRetriesBadge: HTMLElement | null = null;
+let reportCurrentStreamButton: HTMLButtonElement | null = null;
 let lastRequestedChannel: LastPlayedChannel | null = null;
+let lastConfirmedHealthyUrl = "";
 
 function teardownHls(): void {
   if (hls) {
@@ -176,6 +183,7 @@ function startPlayback(
   }
 
   lastRequestedChannel = currentChannel;
+  lastConfirmedHealthyUrl = "";
   syncStoredChannel(currentChannel);
   if (!options.resetRetries) {
     appStore.setPlayer({
@@ -247,6 +255,7 @@ function startPlayback(
         return;
       }
       logDiagnostic("error", "Fatal HLS playback error detected.", currentChannel.url);
+      markSourcePlaybackFailure(currentChannel.url, currentChannel.name);
       handlePlaybackRetry("This stream could not be played in HLS mode.");
     });
   } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
@@ -288,6 +297,9 @@ function handlePlaybackRetry(errorMessage: string): void {
   const retries = appStore.getState().player.retries;
   if (!lastRequestedChannel || retries >= MAX_RETRIES) {
     logDiagnostic("error", errorMessage, lastRequestedChannel?.url);
+    if (lastRequestedChannel) {
+      markSourcePlaybackFailure(lastRequestedChannel.url, lastRequestedChannel.name);
+    }
     appStore.setPlayer({
       errorMessage,
       status: "error",
@@ -344,6 +356,9 @@ export function initializePlayerService(): void {
   retryButton = document.getElementById(
     "retryPlayback"
   ) as HTMLButtonElement | null;
+  reportCurrentStreamButton = document.getElementById(
+    "reportCurrentStream"
+  ) as HTMLButtonElement | null;
   playerStatusBadge = document.getElementById("playerStatusBadge");
   playerNetworkBadge = document.getElementById("playerNetworkBadge");
   playerRetriesBadge = document.getElementById("playerRetriesBadge");
@@ -360,7 +375,8 @@ export function initializePlayerService(): void {
     !fullscreenButton ||
     !qualitySelect ||
     !audioTrackSelect ||
-    !retryButton
+    !retryButton ||
+    !reportCurrentStreamButton
   ) {
     return;
   }
@@ -461,7 +477,22 @@ export function initializePlayerService(): void {
     );
   });
 
+  reportCurrentStreamButton.addEventListener("click", () => {
+    const channel = appStore.getState().player.currentChannel;
+    if (!channel) {
+      return;
+    }
+
+    reportSourceIssue(channel.url, channel.name);
+  });
+
   video.addEventListener("play", () => {
+    const channel = appStore.getState().player.currentChannel;
+    if (channel && lastConfirmedHealthyUrl !== channel.url) {
+      lastConfirmedHealthyUrl = channel.url;
+      markSourcePlaybackSuccess(channel.url, channel.name);
+    }
+
     appStore.setPlayer({
       errorMessage: null,
       status: "playing",
@@ -475,6 +506,10 @@ export function initializePlayerService(): void {
   });
 
   video.addEventListener("error", () => {
+    const channel = appStore.getState().player.currentChannel;
+    if (channel) {
+      markSourcePlaybackFailure(channel.url, channel.name);
+    }
     handlePlaybackRetry("Playback hit an error. Try another stream.");
   });
 

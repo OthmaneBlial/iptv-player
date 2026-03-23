@@ -6,6 +6,7 @@ import {
   LastPlayedChannel,
   PlayerPreferences,
   PlaylistRecord,
+  SourceHealthEntry,
   ThemeMode,
 } from "../types/models";
 import {
@@ -16,6 +17,7 @@ import {
   getStoredHistory,
   getStoredPlaylistLibrary,
   getStoredPlaylist,
+  getStoredSourceHealth,
   getStoredTheme,
 } from "../utils/storage";
 
@@ -68,6 +70,27 @@ function normalizeFavorites(favorites: FavoriteRecord[]): FavoriteRecord[] {
     }));
 }
 
+function normalizeSourceHealth(
+  sourceHealth: SourceHealthEntry[]
+): SourceHealthEntry[] {
+  return sourceHealth
+    .filter((entry) => Boolean(entry.url))
+    .map((entry) => ({
+      checkedAt: entry.checkedAt || null,
+      failures: typeof entry.failures === "number" ? entry.failures : 0,
+      lastFailureAt: entry.lastFailureAt || null,
+      lastKnownName: entry.lastKnownName || "Unknown channel",
+      lastSuccessfulAt: entry.lastSuccessfulAt || null,
+      latencyMs: typeof entry.latencyMs === "number" ? entry.latencyMs : null,
+      negativeReports:
+        typeof entry.negativeReports === "number" ? entry.negativeReports : 0,
+      positiveReports:
+        typeof entry.positiveReports === "number" ? entry.positiveReports : 0,
+      status: entry.status || "unknown",
+      url: entry.url,
+    }));
+}
+
 function normalizePlayerPreferences(
   preferences: PlayerPreferences
 ): PlayerPreferences {
@@ -114,6 +137,7 @@ export function bootstrapAppState(): void {
   const history = normalizeHistory(getStoredHistory());
   const preferences = normalizePlayerPreferences(getPlayerPreferences());
   const lastPlayed = normalizeLastPlayed(getLastPlayedChannel());
+  const sourceHealth = normalizeSourceHealth(getStoredSourceHealth());
 
   appStore.replaceState({
     activePlaylistId,
@@ -157,6 +181,7 @@ export function bootstrapAppState(): void {
       status: "idle",
     },
     playlists,
+    sourceHealth,
     theme,
   });
 }

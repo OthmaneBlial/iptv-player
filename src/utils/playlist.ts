@@ -17,6 +17,10 @@ import {
 } from "./favorites";
 import { logDiagnostic } from "./diagnostics";
 import {
+  getSourceHealthLabel,
+  getSourceHealthRank,
+} from "./sourceHealth";
+import {
   setStoredPlaylist,
   setStoredPlaylistLibrary,
 } from "./storage";
@@ -308,7 +312,7 @@ export function updateChannelDiscoveryFilters(
     country: string;
     group: string;
     language: string;
-    sort: "favorites" | "group" | "name" | "recent";
+    sort: "favorites" | "group" | "health" | "name" | "recent";
   }>
 ): void {
   appStore.setFilters(filters);
@@ -358,6 +362,9 @@ function getFilteredChannels(): Channel[] {
       .join("|"),
     filters,
     history: appStore.getState().history.map((item) => item.url).join("|"),
+    sourceHealth: appStore.getState().sourceHealth
+      .map((entry) => `${entry.url}:${entry.status}:${entry.positiveReports}:${entry.negativeReports}:${entry.failures}`)
+      .join("|"),
   });
   if (cacheKey === filteredChannelsCacheKey) {
     return filteredChannelsCache;
@@ -535,6 +542,13 @@ function sortChannels(channels: Channel[]): Channel[] {
   const recentOrder = getRecentChannelOrder();
 
   return [...channels].sort((left, right) => {
+    if (sort === "health") {
+      const healthDelta = getSourceHealthRank(right.url) - getSourceHealthRank(left.url);
+      if (healthDelta !== 0) {
+        return healthDelta;
+      }
+    }
+
     if (sort === "favorites") {
       const favoriteDelta =
         Number(favorites.has(right.url)) - Number(favorites.has(left.url));
@@ -562,6 +576,11 @@ function sortChannels(channels: Channel[]): Channel[] {
       if (groupCompare !== 0) {
         return groupCompare;
       }
+    }
+
+    const healthDelta = getSourceHealthRank(right.url) - getSourceHealthRank(left.url);
+    if (healthDelta !== 0) {
+      return healthDelta;
     }
 
     return left.displayName.localeCompare(right.displayName);
@@ -629,7 +648,9 @@ function renderDiscoveryControls(): void {
 }
 
 function createChannelMeta(channel: Channel): string {
-  return [channel.group, channel.country, channel.language]
+  const healthLabel = getSourceHealthLabel(channel.url);
+
+  return [healthLabel, channel.group, channel.country, channel.language]
     .filter(Boolean)
     .join(" • ");
 }

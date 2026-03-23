@@ -14,6 +14,7 @@ import { initializeEpg } from "./utils/epg";
 import { displayFavorites } from "./utils/favorites";
 import { displayHistory } from "./utils/history";
 import { renderPlaylistState } from "./utils/playlist";
+import { initializeSourceHealth } from "./utils/sourceHealth";
 import { initializeTheme } from "./utils/theme";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -46,6 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeCloudSync();
   initializePwa();
   initializeEpg();
+  initializeSourceHealth();
   renderPlaylistState();
   displayFavorites();
   displayHistory();

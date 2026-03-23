@@ -10,12 +10,18 @@ import {
   importPlaylistFromText,
   loadPlaylistFile,
   renamePlaylist,
+  renderPlaylistState,
   setQuickGroupFilter,
   setDefaultPlaylist,
   updateChannelDiscoveryFilters,
 } from "./playlist";
 import { loadEpgFile, loadEpgFromUrl } from "./epg";
 import { clearHistory } from "./history"; // Import the clearHistory function
+import {
+  confirmSourceWorking,
+  reportSourceIssue,
+  scanActivePlaylistHealth,
+} from "./sourceHealth";
 
 export function setupEventListeners(): void {
   let searchDebounceTimer = 0;
@@ -65,6 +71,12 @@ export function setupEventListeners(): void {
   const channelGroupChips = document.getElementById(
     "channelGroupChips"
   ) as HTMLElement;
+  const scanSourceHealthBtn = document.getElementById(
+    "scanSourceHealth"
+  ) as HTMLElement;
+  const sourceHealthList = document.getElementById(
+    "sourceHealthList"
+  ) as HTMLElement;
   const clearHistoryBtn = document.getElementById(
     "clearHistory"
   ) as HTMLElement; // Get the Clear History button
@@ -109,6 +121,7 @@ export function setupEventListeners(): void {
       sort: (event.target as HTMLSelectElement).value as
         | "favorites"
         | "group"
+        | "health"
         | "name"
         | "recent",
     });
@@ -254,6 +267,36 @@ export function setupEventListeners(): void {
     exportPlaylistLibrary();
   });
 
+  scanSourceHealthBtn?.addEventListener("click", () => {
+    void scanActivePlaylistHealth().catch((error) => {
+      console.error(error);
+    });
+  });
+
+  sourceHealthList?.addEventListener("click", (event) => {
+    const target = event.target as HTMLElement;
+    const action = target
+      .closest("[data-source-health-action]")
+      ?.getAttribute("data-source-health-action");
+    const sourceHealthItem = target.closest("[data-source-health-url]");
+    const url = sourceHealthItem?.getAttribute("data-source-health-url") || "";
+    const name =
+      sourceHealthItem?.getAttribute("data-source-health-name") || "Unknown channel";
+
+    if (!action || !url) {
+      return;
+    }
+
+    if (action === "confirm") {
+      confirmSourceWorking(url, name);
+      return;
+    }
+
+    if (action === "report") {
+      reportSourceIssue(url, name);
+    }
+  });
+
   importPlaylistLibraryFile.addEventListener("change", async () => {
     const [file] = importPlaylistLibraryFile.files || [];
     if (!file) {
@@ -314,5 +357,9 @@ export function setupEventListeners(): void {
         icon.classList.add("fa-chevron-down");
       }
     });
+  });
+
+  window.addEventListener("app:source-health-updated", () => {
+    renderPlaylistState();
   });
 }

@@ -6,6 +6,7 @@ import {
   PlayerPreferences,
   PlaylistLibrarySnapshot,
   PlaylistRecord,
+  SourceHealthEntry,
 } from "../types/models";
 
 const STORAGE_KEYS = {
@@ -14,6 +15,7 @@ const STORAGE_KEYS = {
   playlistLibrary: "playlist.library",
   playerPreferences: "player.preferences",
   playlist: "playlist",
+  sourceHealth: "source.health",
   theme: "theme",
 } as const;
 
@@ -100,6 +102,17 @@ export function getStoredHistory(): HistoryItem[] {
 
 export function setStoredHistory(history: HistoryItem[]): void {
   localStorage.setItem("history", JSON.stringify(history));
+}
+
+export function getStoredSourceHealth(): SourceHealthEntry[] {
+  return parseJSON<SourceHealthEntry[]>(
+    localStorage.getItem(STORAGE_KEYS.sourceHealth),
+    []
+  );
+}
+
+export function setStoredSourceHealth(sourceHealth: SourceHealthEntry[]): void {
+  localStorage.setItem(STORAGE_KEYS.sourceHealth, JSON.stringify(sourceHealth));
 }
 
 export function getPlayerPreferences(): PlayerPreferences {
