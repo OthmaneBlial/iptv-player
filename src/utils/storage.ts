@@ -1,26 +1,10 @@
-export interface StoredPlaylist {
-  url: string;
-  channels: Array<{
-    id?: string;
-    name?: string;
-    logo?: string;
-    group?: string;
-    displayName: string;
-    url: string;
-  }>;
-  lastLoadedAt: string;
-}
-
-export interface PlayerPreferences {
-  volume: number;
-  muted: boolean;
-}
-
-export interface LastPlayedChannel {
-  name: string;
-  url: string;
-  playedAt: string;
-}
+import {
+  FavoriteRecord,
+  HistoryItem,
+  LastPlayedChannel,
+  PlayerPreferences,
+  PlaylistRecord,
+} from "../types/models";
 
 const STORAGE_KEYS = {
   lastPlayed: "player.lastPlayed",
@@ -50,8 +34,8 @@ export function setStoredTheme(theme: string): void {
   localStorage.setItem(STORAGE_KEYS.theme, theme);
 }
 
-export function getStoredPlaylist(): StoredPlaylist | null {
-  const playlist = parseJSON<StoredPlaylist | null>(
+export function getStoredPlaylist(): PlaylistRecord | null {
+  const playlist = parseJSON<PlaylistRecord | null>(
     localStorage.getItem(STORAGE_KEYS.playlist),
     null
   );
@@ -63,8 +47,30 @@ export function getStoredPlaylist(): StoredPlaylist | null {
   return playlist;
 }
 
-export function setStoredPlaylist(playlist: StoredPlaylist): void {
+export function setStoredPlaylist(playlist: PlaylistRecord): void {
   localStorage.setItem(STORAGE_KEYS.playlist, JSON.stringify(playlist));
+}
+
+export function getStoredFavorites(): FavoriteRecord[] {
+  return parseJSON<FavoriteRecord[]>(
+    localStorage.getItem("favorites"),
+    parseJSON<string[]>(localStorage.getItem("favorites"), []).map((url) => ({
+      addedAt: new Date().toISOString(),
+      url,
+    }))
+  );
+}
+
+export function setStoredFavorites(favorites: FavoriteRecord[]): void {
+  localStorage.setItem("favorites", JSON.stringify(favorites));
+}
+
+export function getStoredHistory(): HistoryItem[] {
+  return parseJSON<HistoryItem[]>(localStorage.getItem("history"), []);
+}
+
+export function setStoredHistory(history: HistoryItem[]): void {
+  localStorage.setItem("history", JSON.stringify(history));
 }
 
 export function getPlayerPreferences(): PlayerPreferences {

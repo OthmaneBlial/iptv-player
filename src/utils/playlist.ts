@@ -1,46 +1,31 @@
-import Hls from "hls.js";
-import { addToHistory } from "./history";
-import { getFavorites, loadFavorites, toggleFavorite } from "./favorites";
-import {
-  setLastPlayedChannel,
-  getStoredPlaylist,
-  setStoredPlaylist,
-} from "./storage";
+import { appStore } from "../store/appStore";
+import { Channel, PlaylistRecord } from "../types/models";
+import { getFavorites, toggleFavorite } from "./favorites";
+import { setStoredPlaylist } from "./storage";
 
-interface Channel {
-  id: string;
-  name: string;
-  logo: string;
-  group: string;
-  displayName: string;
-  url: string;
-}
-
-let channels: Channel[] = [];
-let filteredChannels: Channel[] = [];
 let loadedChannels = 0;
 const CHANNELS_PER_LOAD = 50;
+let observer: IntersectionObserver | null = null;
 
 export async function fetchPlaylist(url: string): Promise<void> {
   try {
     const response = await fetch(url);
     if (!response.ok) throw new Error("Network response was not ok");
     const data = await response.text();
-    parseM3U(data);
-    setStoredPlaylist({
-      url,
-      channels,
-      lastLoadedAt: new Date().toISOString(),
-    });
+    const channels = parseM3U(data);
+    const playlist = createPlaylistRecord(url, channels);
+    appStore.setPlaylist(playlist);
+    setStoredPlaylist(playlist);
+    renderPlaylistState();
   } catch (error) {
     alert("Failed to load playlist. Please check the URL.");
     console.error(error);
   }
 }
 
-export function parseM3U(data: string): void {
+export function parseM3U(data: string): Channel[] {
   const lines = data.split("\n");
-  channels = [];
+  const channels: Channel[] = [];
   let currentChannel: Partial<Channel> = {};
 
   lines.forEach((line) => {
@@ -54,11 +39,7 @@ export function parseM3U(data: string): void {
     }
   });
 
-  filteredChannels = channels;
-  loadedChannels = 0;
-  clearChannels();
-  displayChannels();
-  updateChannelCount(); // Update the channel count after parsing
+  return channels;
 }
 
 function parseEXTINF(line: string): Partial<Channel> {
@@ -87,6 +68,7 @@ export function displayChannels(): void {
     return;
   }
 
+  const filteredChannels = getFilteredChannels();
   const fragment = document.createDocumentFragment();
   const end = Math.min(
     loadedChannels + CHANNELS_PER_LOAD,
@@ -114,32 +96,33 @@ export function displayChannels(): void {
         (e.target as HTMLElement).parentElement?.classList.contains("favorite")
       )
         return;
-      playChannel(channel.url, channel.displayName);
+      window.dispatchEvent(
+        new CustomEvent("app:play-channel", {
+          detail: { name: channel.displayName, url: channel.url },
+        })
+      );
     });
 
     // Event listener for favorite button
     const favoriteBtn = li.querySelector(".favorite") as HTMLElement;
     favoriteBtn.addEventListener("click", (e) => {
       e.stopPropagation(); // Prevent triggering the channel play
-      toggleFavorite(channel.url, favoriteBtn);
+      toggleFavorite(channel.url);
     });
 
     fragment.appendChild(li);
   }
   channelsList.appendChild(fragment);
   loadedChannels = end;
-  loadFavorites();
   observeScroll();
   updateChannelCount(); // Update the channel count after displaying channels
 }
 
 function observeScroll(): void {
-  const observer = new IntersectionObserver(
+  observer?.disconnect();
+  observer = new IntersectionObserver(
     (entries) => {
-      if (
-        entries[0].isIntersecting &&
-        loadedChannels < filteredChannels.length
-      ) {
+      if (entries[0].isIntersecting && loadedChannels < getFilteredChannels().length) {
         displayChannels();
       }
     },
@@ -152,50 +135,11 @@ function observeScroll(): void {
 }
 
 export function filterChannels(query: string): void {
-  filteredChannels = channels.filter((channel) =>
-    channel.displayName.toLowerCase().includes(query)
-  );
+  appStore.setFilters({ query });
   loadedChannels = 0;
   clearChannels();
   displayChannels();
   updateChannelCount(); // Update the channel count after filtering
-}
-
-export function playChannel(url: string, channelName: string): void {
-  const video = document.getElementById("videoPlayer") as HTMLVideoElement;
-
-  window.dispatchEvent(
-    new CustomEvent("channel:play", {
-      detail: { name: channelName, url },
-    })
-  );
-
-  if (Hls.isSupported()) {
-    const hls = new Hls();
-    hls.loadSource(url); // Use the absolute URL directly
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED, () => {
-      video.play().catch((error) => {
-        console.error("Autoplay failed.", error);
-      });
-    });
-  } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-    video.src = url; // Use the absolute URL directly
-    video.onloadedmetadata = () => {
-      video.play().catch((error) => {
-        console.error("Autoplay failed.", error);
-      });
-    };
-  } else {
-    alert("Your browser does not support HLS playback.");
-  }
-
-  addToHistory(channelName, url);
-  setLastPlayedChannel({
-    name: channelName,
-    url,
-    playedAt: new Date().toISOString(),
-  });
 }
 
 // Function to update the channel count in the sidebar
@@ -204,7 +148,7 @@ function updateChannelCount(): void {
     "channelCount"
   ) as HTMLElement;
   if (channelCountSpan) {
-    channelCountSpan.textContent = filteredChannels.length.toString();
+    channelCountSpan.textContent = getFilteredChannels().length.toString();
   }
 }
 
@@ -215,32 +159,51 @@ function clearChannels(): void {
   }
 }
 
-export function restoreStoredPlaylist(): boolean {
-  const storedPlaylist = getStoredPlaylist();
-  if (!storedPlaylist) {
-    return false;
+function getFilteredChannels(): Channel[] {
+  const { playlist, filters } = appStore.getState();
+  const channels = playlist?.channels || [];
+  const normalizedQuery = filters.query.toLowerCase();
+
+  if (!normalizedQuery) {
+    return channels;
   }
 
-  channels = storedPlaylist.channels.map((channel) => ({
-    id: channel.id || "",
-    name: channel.name || channel.displayName,
-    logo: channel.logo || "",
-    group: channel.group || "Ungrouped",
-    displayName: channel.displayName,
-    url: channel.url,
-  }));
-  filteredChannels = [...channels];
+  return channels.filter((channel) =>
+    channel.displayName.toLowerCase().includes(normalizedQuery)
+  );
+}
+
+function createPlaylistRecord(
+  url: string,
+  channels: Channel[]
+): PlaylistRecord {
+  const label = url.split("/").pop() || "Imported playlist";
+  return {
+    channels,
+    id: "default-playlist",
+    lastLoadedAt: new Date().toISOString(),
+    name: label.replace(/\.m3u8?$/i, "") || "Imported playlist",
+    url,
+  };
+}
+
+export function renderPlaylistState(): void {
   loadedChannels = 0;
   clearChannels();
   displayChannels();
   updateChannelCount();
 
+  const activePlaylist = appStore.getState().playlist;
   const playlistUrlInput = document.getElementById(
     "playlistUrl"
   ) as HTMLInputElement | null;
-  if (playlistUrlInput) {
-    playlistUrlInput.value = storedPlaylist.url;
+  if (playlistUrlInput && activePlaylist) {
+    playlistUrlInput.value = activePlaylist.url;
   }
+}
 
-  return true;
+export function findChannelByUrl(url: string): Channel | undefined {
+  return appStore
+    .getState()
+    .playlist?.channels.find((channel) => channel.url === url);
 }

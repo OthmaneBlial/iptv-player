@@ -1,51 +1,39 @@
-import { playChannel } from "./playlist";
+import { appStore } from "../store/appStore";
+import { FavoriteRecord } from "../types/models";
+import { findChannelByUrl, renderPlaylistState } from "./playlist";
+import { setStoredFavorites } from "./storage";
 
-interface Channel {
-  id: string;
-  name: string;
-  logo: string;
-  group: string;
-  displayName: string;
-  url: string;
-}
+export function toggleFavorite(channelUrl: string): void {
+  const favorites = appStore.getState().favorites;
+  const nextFavorites = favorites.some((favorite) => favorite.url === channelUrl)
+    ? favorites.filter((favorite) => favorite.url !== channelUrl)
+    : [
+        ...favorites,
+        {
+          addedAt: new Date().toISOString(),
+          url: channelUrl,
+        },
+      ];
 
-let favorites: string[] = JSON.parse(localStorage.getItem("favorites") || "[]");
-
-export function toggleFavorite(channelUrl: string, btn: HTMLElement): void {
-  if (favorites.includes(channelUrl)) {
-    favorites = favorites.filter((url) => url !== channelUrl);
-    btn.innerHTML = '<i class="far fa-heart"></i>';
-    btn.classList.remove("active");
-  } else {
-    favorites.push(channelUrl);
-    btn.innerHTML = '<i class="fas fa-heart"></i>';
-    btn.classList.add("active");
-  }
-  localStorage.setItem("favorites", JSON.stringify(favorites));
+  appStore.setFavorites(nextFavorites);
+  setStoredFavorites(nextFavorites);
   displayFavorites();
+  renderPlaylistState();
 }
 
 export function getFavorites(): string[] {
-  return favorites;
-}
-
-export function loadFavorites(): void {
-  favorites.forEach((url) => {
-    const btn = document.querySelector(
-      `.favorite[data-url="${url}"] i`
-    ) as HTMLElement;
-    if (btn && !btn.classList.contains("fas")) {
-      btn.classList.add("fas");
-      btn.classList.remove("far");
-    }
-  });
+  return appStore.getState().favorites.map((favorite) => favorite.url);
 }
 
 export function displayFavorites(): void {
   const favoritesList = document.getElementById("favoritesList") as HTMLElement;
+  if (!favoritesList) {
+    return;
+  }
+
   favoritesList.innerHTML = "";
-  favorites.forEach((url) => {
-    const channel = getChannelByUrl(url);
+  appStore.getState().favorites.forEach((favorite: FavoriteRecord) => {
+    const channel = findChannelByUrl(favorite.url);
     if (channel) {
       const li = document.createElement("li");
       li.classList.add("favorites-item");
@@ -65,20 +53,18 @@ export function displayFavorites(): void {
           )
         )
           return;
-        playChannel(channel.url, channel.displayName);
+        window.dispatchEvent(
+          new CustomEvent("app:play-channel", {
+            detail: { name: channel.displayName, url: channel.url },
+          })
+        );
       });
       const favoriteBtn = li.querySelector(".favorite") as HTMLElement;
       favoriteBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        toggleFavorite(channel.url, favoriteBtn);
+        toggleFavorite(channel.url);
       });
       favoritesList.appendChild(li);
     }
   });
-}
-
-function getChannelByUrl(url: string): Channel | undefined {
-  const playlist = JSON.parse(localStorage.getItem("playlist") || "{}");
-  const channels: Channel[] = playlist.channels || [];
-  return channels.find((ch) => ch.url === url);
 }

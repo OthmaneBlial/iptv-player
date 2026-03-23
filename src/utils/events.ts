@@ -27,6 +27,12 @@ export function setupEventListeners(): void {
     filterChannels(query);
   });
 
+  playlistUrlInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      importBtn.click();
+    }
+  });
+
   // Event listener for Clear History button
   clearHistoryBtn.addEventListener("click", () => {
     if (confirm("Are you sure you want to clear your history?")) {

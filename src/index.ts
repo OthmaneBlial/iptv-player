@@ -2,8 +2,12 @@ import "./styles/main.scss";
 import { Header } from "./components/Header";
 import { Player } from "./components/Player";
 import { Sidebar } from "./components/Sidebar";
+import { bootstrapAppState } from "./services/bootstrap";
+import { initializePlayerService } from "./services/playerService";
 import { setupEventListeners } from "./utils/events";
-import { restoreStoredPlaylist } from "./utils/playlist";
+import { displayFavorites } from "./utils/favorites";
+import { displayHistory } from "./utils/history";
+import { renderPlaylistState } from "./utils/playlist";
 import { initializeTheme } from "./utils/theme";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -28,6 +32,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   appRoot.appendChild(main);
 
+  bootstrapAppState();
   setupEventListeners();
-  restoreStoredPlaylist();
+  initializeTheme();
+  initializePlayerService();
+  renderPlaylistState();
+  displayFavorites();
+  displayHistory();
 });

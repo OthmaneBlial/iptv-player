@@ -1,32 +1,35 @@
+import { appStore } from "../store/appStore";
+import { HistoryItem } from "../types/models";
 import { toggleFavorite } from "./favorites";
-import { playChannel } from "./playlist";
-
-interface HistoryItem {
-  name: string;
-  url: string;
-  timestamp: string;
-}
-
-let history: HistoryItem[] = JSON.parse(
-  localStorage.getItem("history") || "[]"
-);
+import { setStoredHistory } from "./storage";
 
 export function addToHistory(channelName: string, url: string): void {
-  history = history.filter((item) => item.url !== url);
-  history.unshift({
+  const nextHistory = appStore
+    .getState()
+    .history.filter((item) => item.url !== url);
+
+  nextHistory.unshift({
     name: channelName,
-    url: url,
+    url,
     timestamp: new Date().toISOString(),
   });
-  if (history.length > 20) history.pop();
-  localStorage.setItem("history", JSON.stringify(history));
+  if (nextHistory.length > 20) {
+    nextHistory.pop();
+  }
+
+  appStore.setHistory(nextHistory);
+  setStoredHistory(nextHistory);
   displayHistory();
 }
 
 export function displayHistory(): void {
   const historyList = document.getElementById("historyList") as HTMLElement;
+  if (!historyList) {
+    return;
+  }
+
   historyList.innerHTML = "";
-  history.forEach((item) => {
+  appStore.getState().history.forEach((item: HistoryItem) => {
     const li = document.createElement("li");
     li.classList.add("history-item");
     li.innerHTML = `
@@ -46,12 +49,16 @@ export function displayHistory(): void {
         (e.target as HTMLElement).parentElement?.classList.contains("favorite")
       )
         return;
-      playChannel(item.url, item.name);
+      window.dispatchEvent(
+        new CustomEvent("app:play-channel", {
+          detail: { name: item.name, url: item.url },
+        })
+      );
     });
     const favoriteBtn = li.querySelector(".favorite") as HTMLElement;
     favoriteBtn.addEventListener("click", (e) => {
       e.stopPropagation();
-      toggleFavorite(item.url, favoriteBtn);
+      toggleFavorite(item.url);
     });
     historyList.appendChild(li);
   });
@@ -59,7 +66,7 @@ export function displayHistory(): void {
 
 // Function to clear the history
 export function clearHistory(): void {
-  history = [];
-  localStorage.setItem("history", JSON.stringify(history));
+  appStore.setHistory([]);
+  setStoredHistory([]);
   displayHistory();
 }
