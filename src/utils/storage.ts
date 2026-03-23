@@ -16,12 +16,143 @@ const STORAGE_KEYS = {
   epg: "epg",
   multiview: "player.multiview",
   playlistLibrary: "playlist.library",
+  playlistLibraryMeta: "playlist.library.meta",
   playerPreferences: "player.preferences",
   playlist: "playlist",
   profiles: "profiles",
   sourceHealth: "source.health",
   theme: "theme",
 } as const;
+
+const DATABASE_NAME = "broadcast-console-storage";
+const DATABASE_VERSION = 1;
+const KV_STORE_NAME = "kv";
+
+function supportsIndexedDb(): boolean {
+  return typeof indexedDB !== "undefined";
+}
+
+function removeLocalStorageItem(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch (error) {
+    console.warn("Failed to remove local storage item.", error);
+  }
+}
+
+async function openStorageDatabase(): Promise<IDBDatabase | null> {
+  if (!supportsIndexedDb()) {
+    return null;
+  }
+
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
+
+    request.onupgradeneeded = () => {
+      const database = request.result;
+      if (!database.objectStoreNames.contains(KV_STORE_NAME)) {
+        database.createObjectStore(KV_STORE_NAME);
+      }
+    };
+
+    request.onsuccess = () => {
+      resolve(request.result);
+    };
+
+    request.onerror = () => {
+      reject(request.error || new Error("Could not open IndexedDB storage."));
+    };
+  });
+}
+
+async function readIndexedValue<T>(key: string): Promise<T | null> {
+  const database = await openStorageDatabase();
+  if (!database) {
+    return null;
+  }
+
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(KV_STORE_NAME, "readonly");
+    const store = transaction.objectStore(KV_STORE_NAME);
+    const request = store.get(key);
+
+    request.onsuccess = () => {
+      resolve((request.result as T | undefined) || null);
+    };
+
+    request.onerror = () => {
+      reject(request.error || new Error("Could not read IndexedDB value."));
+    };
+
+    transaction.oncomplete = () => {
+      database.close();
+    };
+
+    transaction.onerror = () => {
+      reject(transaction.error || new Error("IndexedDB read transaction failed."));
+    };
+  });
+}
+
+async function writeIndexedValue<T>(key: string, value: T): Promise<void> {
+  const database = await openStorageDatabase();
+  if (!database) {
+    throw new Error("IndexedDB is not available in this environment.");
+  }
+
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(KV_STORE_NAME, "readwrite");
+    const store = transaction.objectStore(KV_STORE_NAME);
+    store.put(value, key);
+
+    transaction.oncomplete = () => {
+      database.close();
+      resolve();
+    };
+
+    transaction.onerror = () => {
+      reject(transaction.error || new Error("IndexedDB write transaction failed."));
+    };
+  });
+}
+
+function getPlaylistLibraryFallback(): PlaylistLibrarySnapshot | null {
+  return parseJSON<PlaylistLibrarySnapshot | null>(
+    localStorage.getItem(STORAGE_KEYS.playlistLibrary),
+    null
+  );
+}
+
+function setPlaylistLibraryFallback(snapshot: PlaylistLibrarySnapshot): void {
+  localStorage.setItem(STORAGE_KEYS.playlistLibrary, JSON.stringify(snapshot));
+}
+
+function createPlaylistLibraryMeta(
+  snapshot: PlaylistLibrarySnapshot
+): Pick<PlaylistLibrarySnapshot, "activePlaylistId" | "defaultPlaylistId"> & {
+  playlists: Array<
+    Pick<
+      PlaylistRecord,
+      "id" | "lastLoadedAt" | "name" | "sourceLabel" | "sourceType" | "url"
+    > & {
+      channelCount: number;
+    }
+  >;
+} {
+  return {
+    activePlaylistId: snapshot.activePlaylistId,
+    defaultPlaylistId: snapshot.defaultPlaylistId,
+    playlists: snapshot.playlists.map((playlist) => ({
+      channelCount: playlist.channels.length,
+      id: playlist.id,
+      lastLoadedAt: playlist.lastLoadedAt,
+      name: playlist.name,
+      sourceLabel: playlist.sourceLabel,
+      sourceType: playlist.sourceType,
+      url: playlist.url,
+    })),
+  };
+}
 
 function parseJSON<T>(rawValue: string | null, fallback: T): T {
   if (!rawValue) {
@@ -58,20 +189,47 @@ export function getStoredPlaylist(): PlaylistRecord | null {
 }
 
 export function setStoredPlaylist(playlist: PlaylistRecord): void {
-  localStorage.setItem(STORAGE_KEYS.playlist, JSON.stringify(playlist));
+  try {
+    localStorage.setItem(STORAGE_KEYS.playlist, JSON.stringify(playlist));
+  } catch (error) {
+    console.warn("Could not persist legacy playlist storage.", error);
+  }
 }
 
-export function getStoredPlaylistLibrary(): PlaylistLibrarySnapshot | null {
-  return parseJSON<PlaylistLibrarySnapshot | null>(
-    localStorage.getItem(STORAGE_KEYS.playlistLibrary),
-    null
-  );
+export async function getStoredPlaylistLibrary(): Promise<PlaylistLibrarySnapshot | null> {
+  try {
+    const indexedValue = await readIndexedValue<PlaylistLibrarySnapshot>(
+      STORAGE_KEYS.playlistLibrary
+    );
+    if (indexedValue?.playlists?.length) {
+      return indexedValue;
+    }
+  } catch (error) {
+    console.warn("Could not read playlist library from IndexedDB.", error);
+  }
+
+  return getPlaylistLibraryFallback();
 }
 
-export function setStoredPlaylistLibrary(
+export async function setStoredPlaylistLibrary(
   snapshot: PlaylistLibrarySnapshot
-): void {
-  localStorage.setItem(STORAGE_KEYS.playlistLibrary, JSON.stringify(snapshot));
+): Promise<void> {
+  if (supportsIndexedDb()) {
+    try {
+      await writeIndexedValue(STORAGE_KEYS.playlistLibrary, snapshot);
+      localStorage.setItem(
+        STORAGE_KEYS.playlistLibraryMeta,
+        JSON.stringify(createPlaylistLibraryMeta(snapshot))
+      );
+      removeLocalStorageItem(STORAGE_KEYS.playlistLibrary);
+      removeLocalStorageItem(STORAGE_KEYS.playlist);
+      return;
+    } catch (error) {
+      console.warn("Could not persist playlist library to IndexedDB.", error);
+    }
+  }
+
+  setPlaylistLibraryFallback(snapshot);
 }
 
 export function getStoredEpg(): EpgState | null {

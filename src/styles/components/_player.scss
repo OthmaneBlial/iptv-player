@@ -2,7 +2,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  background-color: #000;
+  background-color: #050c16;
   position: relative;
   transition: background-color var(--transition-speed);
   overflow: hidden;
@@ -54,7 +54,7 @@
     font-size: 0.76rem;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: #7be495;
+    color: var(--accent-secondary);
   }
 
   .player-badges {
@@ -105,11 +105,11 @@
     padding: 0.9rem 1.2rem;
     border: none;
     border-radius: 999px;
-    background: linear-gradient(135deg, #1db954, #7be495);
-    color: #09250f;
+    background: linear-gradient(135deg, var(--button-bg), #ffd29a);
+    color: var(--button-text);
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 16px 40px rgba(29, 185, 84, 0.24);
+    box-shadow: 0 16px 40px rgba(255, 156, 82, 0.24);
   }
 
   .controls {
@@ -125,19 +125,21 @@
     input[type="range"],
     .player-select {
       padding: 10px 15px;
-      background-color: rgba(0, 0, 0, 0.6);
-      border: none;
+      background-color: rgba(7, 14, 26, 0.7);
+      border: 1px solid rgba(160, 181, 216, 0.14);
       color: #fff;
       cursor: pointer;
-      border-radius: 5px;
-      font-size: 16px;
+      border-radius: 999px;
+      font-size: 15px;
       display: flex;
       align-items: center;
       gap: 5px;
-      transition: background-color var(--transition-speed);
+      transition: background-color var(--transition-speed), transform var(--transition-speed), border-color var(--transition-speed);
 
       &:hover {
-        background-color: rgba(0, 0, 0, 0.8);
+        background-color: rgba(15, 25, 42, 0.88);
+        transform: translateY(-1px);
+        border-color: rgba(255, 180, 84, 0.24);
       }
     }
 
@@ -184,7 +186,7 @@
     z-index: 9;
     padding: 1rem;
     border-radius: 18px;
-    background: rgba(0, 0, 0, 0.58);
+    background: rgba(7, 14, 26, 0.62);
     backdrop-filter: blur(14px);
     display: flex;
     flex-direction: column;
@@ -207,7 +209,7 @@
 
   .guide-drawer-time {
     font-size: 0.82rem;
-    color: #7be495;
+    color: var(--accent-secondary);
   }
 
   .quick-switch-overlay {
@@ -215,7 +217,7 @@
     inset: 96px 20px 20px 20px;
     z-index: 8;
     border-radius: 24px;
-    background: rgba(7, 12, 10, 0.8);
+    background: rgba(7, 14, 26, 0.84);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     padding: 1.15rem;
@@ -258,7 +260,7 @@
     padding: 1rem;
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(160, 181, 216, 0.12);
     display: flex;
     justify-content: space-between;
     gap: 0.85rem;
@@ -308,7 +310,7 @@
     border-radius: 22px;
     overflow: hidden;
     background: rgba(0, 0, 0, 0.92);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(160, 181, 216, 0.12);
 
     video {
       width: 100%;

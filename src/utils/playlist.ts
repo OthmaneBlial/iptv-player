@@ -22,7 +22,6 @@ import {
   getSourceHealthRank,
 } from "./sourceHealth";
 import {
-  setStoredPlaylist,
   setStoredPlaylistLibrary,
 } from "./storage";
 
@@ -117,13 +116,21 @@ export async function importPlaylistFromText(
   if (!appStore.getState().defaultPlaylistId) {
     appStore.setDefaultPlaylistId(playlist.id);
   }
-  setStoredPlaylist(playlist);
-  persistPlaylistLibrary();
   renderPlaylistState();
-  setPlaylistFeedback(
-    `Imported ${channels.length} channels from ${options.sourceLabel}.`,
-    "success"
-  );
+  try {
+    await persistPlaylistLibrary();
+    setPlaylistFeedback(
+      `Imported ${channels.length} channels from ${options.sourceLabel}.`,
+      "success"
+    );
+  } catch (error) {
+    logDiagnostic("warn", "Playlist imported but local save failed.", options.sourceLabel);
+    setPlaylistFeedback(
+      `Imported ${channels.length} channels, but local save failed. The current session still works.`,
+      "error"
+    );
+    console.error(error);
+  }
   logDiagnostic(
     "info",
     `Imported playlist with ${channels.length} channels.`,
@@ -682,24 +689,30 @@ function getActivePlaylist(): PlaylistRecord | null {
   );
 }
 
-function persistPlaylistLibrary(): void {
+async function persistPlaylistLibrary(): Promise<void> {
   const snapshot: PlaylistLibrarySnapshot = {
     activePlaylistId: appStore.getState().activePlaylistId,
     defaultPlaylistId: appStore.getState().defaultPlaylistId,
     playlists: appStore.getState().playlists,
   };
 
-  setStoredPlaylistLibrary(snapshot);
+  await setStoredPlaylistLibrary(snapshot);
+}
 
-  const activePlaylist = getActivePlaylist();
-  if (activePlaylist) {
-    setStoredPlaylist(activePlaylist);
-  }
+function persistPlaylistLibraryInBackground(context: string): void {
+  void persistPlaylistLibrary().catch((error) => {
+    logDiagnostic("warn", "Playlist changes were not saved locally.", context);
+    setPlaylistFeedback(
+      "The current session updated, but local save failed. Keep this tab open or export a backup.",
+      "error"
+    );
+    console.error(error);
+  });
 }
 
 export function activatePlaylist(playlistId: string): void {
   appStore.setActivePlaylistId(playlistId);
-  persistPlaylistLibrary();
+  persistPlaylistLibraryInBackground(playlistId);
   renderPlaylistState();
 }
 
@@ -719,7 +732,7 @@ export function renamePlaylist(playlistId: string, nextName: string): void {
         : playlist
     )
   );
-  persistPlaylistLibrary();
+  persistPlaylistLibraryInBackground(playlistId);
   renderPlaylistState();
 }
 
@@ -740,7 +753,7 @@ export function duplicatePlaylist(playlistId: string): void {
 
   appStore.setPlaylists([duplicate, ...appStore.getState().playlists]);
   appStore.setActivePlaylistId(duplicate.id);
-  persistPlaylistLibrary();
+  persistPlaylistLibraryInBackground(playlistId);
   renderPlaylistState();
 }
 
@@ -760,13 +773,13 @@ export function deletePlaylist(playlistId: string): void {
   appStore.setPlaylists(remainingPlaylists);
   appStore.setActivePlaylistId(nextActivePlaylistId);
   appStore.setDefaultPlaylistId(nextDefaultPlaylistId);
-  persistPlaylistLibrary();
+  persistPlaylistLibraryInBackground(playlistId);
   renderPlaylistState();
 }
 
 export function setDefaultPlaylist(playlistId: string): void {
   appStore.setDefaultPlaylistId(playlistId);
-  persistPlaylistLibrary();
+  persistPlaylistLibraryInBackground(playlistId);
   renderPlaylistState();
 }
 
@@ -796,9 +809,17 @@ export async function importPlaylistLibraryBackup(file: File): Promise<void> {
   appStore.setDefaultPlaylistId(
     parsed.defaultPlaylistId || parsed.activePlaylistId || playlists[0]?.id || null
   );
-  persistPlaylistLibrary();
   renderPlaylistState();
-  setPlaylistFeedback(`Imported ${playlists.length} saved playlists.`, "success");
+  try {
+    await persistPlaylistLibrary();
+    setPlaylistFeedback(`Imported ${playlists.length} saved playlists.`, "success");
+  } catch (error) {
+    setPlaylistFeedback(
+      "Imported the backup for this session, but local save failed afterward.",
+      "error"
+    );
+    console.error(error);
+  }
 }
 
 export function renderPlaylistLibrary(): void {

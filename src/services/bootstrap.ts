@@ -161,9 +161,9 @@ function normalizeLastPlayed(
   return channel;
 }
 
-export function bootstrapAppState(): void {
+export async function bootstrapAppState(): Promise<void> {
   const theme = normalizeTheme(getStoredTheme());
-  const storedLibrary = getStoredPlaylistLibrary();
+  const storedLibrary = await getStoredPlaylistLibrary();
   const legacyPlaylist = normalizePlaylist(getStoredPlaylist());
   const playlists = storedLibrary
     ? normalizePlaylists(storedLibrary.playlists)

@@ -3,13 +3,17 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 
+const requestedPort = Number(process.env.PORT);
+const devServerPort =
+  Number.isInteger(requestedPort) && requestedPort > 0 ? requestedPort : "auto";
+
 module.exports = {
   entry: "./src/index.ts",
   mode: "development", // Change to 'production' for production builds
   devtool: "inline-source-map",
   devServer: {
     static: path.resolve(__dirname, "dist"),
-    port: 8080,
+    port: devServerPort,
     open: true,
     hot: true,
   },

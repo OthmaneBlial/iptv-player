@@ -1,7 +1,7 @@
 header {
   min-height: var(--header-height);
   background:
-    linear-gradient(135deg, rgba(12, 24, 18, 0.92), rgba(16, 31, 24, 0.86));
+    linear-gradient(135deg, rgba(9, 18, 31, 0.96), rgba(16, 29, 49, 0.9));
   color: var(--text-color);
   display: flex;
   align-items: center;
@@ -28,8 +28,8 @@ header {
     font-family: "Bricolage Grotesque", sans-serif;
     font-size: 1.1rem;
     font-weight: 800;
-    color: #10200e;
-    background: linear-gradient(135deg, var(--accent-color), #ffe08e);
+    color: #241407;
+    background: linear-gradient(135deg, var(--accent-color), #ffd9a4);
   }
 
   .header-eyebrow {
@@ -47,7 +47,7 @@ header {
   }
 
   .header-summary {
-    color: rgba(245, 246, 239, 0.72);
+    color: rgba(244, 242, 237, 0.72);
     max-width: 520px;
     line-height: 1.5;
   }
@@ -63,8 +63,8 @@ header {
     min-width: 118px;
     padding: 0.8rem 0.95rem;
     border-radius: 18px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(160, 181, 216, 0.12);
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
@@ -75,7 +75,7 @@ header {
   }
 
   .status-label {
-    color: rgba(245, 246, 239, 0.56);
+    color: rgba(244, 242, 237, 0.56);
     text-transform: uppercase;
     letter-spacing: 0.12em;
     font-size: 0.68rem;
@@ -106,8 +106,8 @@ header {
     min-width: 150px;
     padding: 0.72rem 0.9rem;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(160, 181, 216, 0.14);
+    background: rgba(255, 255, 255, 0.06);
     color: var(--text-color);
   }
 
@@ -117,7 +117,7 @@ header {
   }
 
   .header-note {
-    color: rgba(245, 246, 239, 0.58);
+    color: rgba(244, 242, 237, 0.58);
     font-size: 0.82rem;
   }
 
@@ -135,15 +135,16 @@ header {
     background-color: var(--button-bg);
     border: none;
     border-radius: 25px;
-    color: #fff;
+    color: var(--button-text);
     font-weight: 600;
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: background-color var(--transition-speed);
+    transition: background-color var(--transition-speed), transform var(--transition-speed);
 
     &:hover {
       background-color: var(--button-hover-bg);
+      transform: translateY(-1px);
     }
   }
 }

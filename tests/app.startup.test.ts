@@ -1,7 +1,21 @@
+function clearIndexedDb(): Promise<void> {
+  if (typeof indexedDB === "undefined") {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    const request = indexedDB.deleteDatabase("broadcast-console-storage");
+    request.onsuccess = () => resolve();
+    request.onerror = () => resolve();
+    request.onblocked = () => resolve();
+  });
+}
+
 describe("app startup", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.resetModules();
     localStorage.clear();
+    await clearIndexedDb();
     document.body.innerHTML = '<div id="app"></div>';
   });
 

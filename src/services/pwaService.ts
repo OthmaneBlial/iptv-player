@@ -21,7 +21,9 @@ function updateInstallUi(): void {
   if (installStatus) {
     installStatus.textContent = isStandalone
       ? "Installed app mode active"
-      : "Installable web app available";
+      : deferredPrompt
+        ? "Install prompt ready"
+        : "Use your browser menu to install";
   }
 
   if (installButton) {
@@ -39,7 +41,6 @@ export function initializePwa(): void {
   }
 
   window.addEventListener("beforeinstallprompt", (event) => {
-    event.preventDefault();
     deferredPrompt = event as BeforeInstallPromptEvent;
     updateInstallUi();
   });

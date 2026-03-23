@@ -108,7 +108,7 @@ function buildPayload(): SyncPayload {
   };
 }
 
-function applyPayload(payload: SyncPayload): void {
+async function applyPayload(payload: SyncPayload): Promise<void> {
   const currentState = appStore.getState();
   const multiview = payload.state.multiview || currentState.multiview;
   const profiles = payload.state.profiles || currentState.profiles;
@@ -137,7 +137,7 @@ function applyPayload(payload: SyncPayload): void {
   };
 
   appStore.replaceState(nextState);
-  setStoredPlaylistLibrary({
+  await setStoredPlaylistLibrary({
     activePlaylistId: payload.state.activePlaylistId,
     defaultPlaylistId: payload.state.defaultPlaylistId,
     playlists: payload.state.playlists,
@@ -257,7 +257,7 @@ export async function pullCloudSync(): Promise<void> {
     }
   }
 
-  applyPayload(payload);
+  await applyPayload(payload);
   const nextConfig = {
     ...config,
     lastLocalChangeAt: payload.generatedAt,

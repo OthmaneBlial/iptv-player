@@ -19,7 +19,7 @@ import { initializeProfiles } from "./utils/profiles";
 import { initializeSourceHealth } from "./utils/sourceHealth";
 import { initializeTheme } from "./utils/theme";
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const appRoot = document.getElementById("app");
   if (!appRoot) {
     throw new Error("App root element not found.");
@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   appRoot.appendChild(main);
 
-  bootstrapAppState();
+  await bootstrapAppState();
   setupEventListeners();
   initializeTheme();
   initializeHeaderSummary();
