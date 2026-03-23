@@ -19,7 +19,32 @@ aside {
     flex-direction: column;
     gap: 10px;
 
-    input[type="text"] {
+    .import-block {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    label {
+      color: var(--section-title-color);
+      font-size: 0.82rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .import-row {
+      display: flex;
+      gap: 10px;
+
+      &--compact {
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+
+    input[type="text"],
+    textarea {
       padding: 10px 15px;
       border: none;
       border-radius: 5px;
@@ -29,9 +54,21 @@ aside {
       color: var(--input-text);
       transition: background-color var(--transition-speed),
         color var(--transition-speed);
+      width: 100%;
     }
 
-    button {
+    textarea {
+      min-height: 140px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    #playlistFile {
+      display: none;
+    }
+
+    button,
+    .file-import-button {
       padding: 10px 20px;
       background-color: var(--button-bg);
       border: none;
@@ -48,6 +85,46 @@ aside {
 
       &:hover {
         background-color: var(--button-hover-bg);
+      }
+    }
+
+    .playlist-dropzone {
+      border: 1px dashed rgba(29, 185, 84, 0.45);
+      border-radius: 14px;
+      padding: 1rem;
+      color: var(--text-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      text-align: center;
+      background: rgba(29, 185, 84, 0.08);
+      transition: border-color var(--transition-speed),
+        background-color var(--transition-speed), transform var(--transition-speed);
+
+      &.is-active {
+        border-color: var(--accent-color);
+        background: rgba(29, 185, 84, 0.18);
+        transform: translateY(-2px);
+      }
+    }
+
+    .playlist-feedback {
+      padding: 0.85rem 1rem;
+      border-radius: 12px;
+      font-size: 0.92rem;
+      line-height: 1.45;
+      background: rgba(255, 255, 255, 0.04);
+      color: rgba(255, 255, 255, 0.78);
+
+      &[data-tone="success"] {
+        background: rgba(29, 185, 84, 0.14);
+        color: #9ef0b8;
+      }
+
+      &[data-tone="error"] {
+        background: rgba(255, 77, 77, 0.14);
+        color: #ffb3b3;
       }
     }
   }
@@ -228,6 +305,19 @@ aside {
 @media (max-width: 768px) {
   aside {
     width: 200px;
+  }
+
+  .playlist-input {
+    .import-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    button,
+    .file-import-button {
+      width: 100%;
+      justify-content: center;
+    }
   }
 
   header {

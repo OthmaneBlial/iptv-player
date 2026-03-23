@@ -15,6 +15,8 @@ export interface PlaylistRecord {
   url: string;
   channels: Channel[];
   lastLoadedAt: string;
+  sourceLabel: string;
+  sourceType: "file" | "text" | "url";
 }
 
 export interface FavoriteRecord {

@@ -3,10 +3,35 @@ export function Sidebar(): HTMLElement {
   aside.id = "sidebar";
   aside.innerHTML = `
     <div class="playlist-input">
-      <input type="text" id="playlistUrl" placeholder="Enter M3U/M3U8 URL" />
-      <button id="importPlaylist">
-        <i class="fas fa-download"></i> Load
-      </button>
+      <div class="import-block">
+        <label for="playlistUrl">Playlist URL</label>
+        <div class="import-row">
+          <input type="text" id="playlistUrl" placeholder="Enter M3U/M3U8 URL" />
+          <button id="importPlaylist">
+            <i class="fas fa-download"></i> Load URL
+          </button>
+        </div>
+      </div>
+      <div class="import-block">
+        <label for="rawPlaylistInput">Raw Playlist</label>
+        <textarea id="rawPlaylistInput" rows="6" placeholder="#EXTM3U&#10;#EXTINF:-1,Sample Channel&#10;https://example.com/live.m3u8"></textarea>
+        <div class="import-row import-row--compact">
+          <label class="file-import-button" for="playlistFile">
+            <i class="fas fa-file-import"></i> Import File
+          </label>
+          <input type="file" id="playlistFile" accept=".m3u,.m3u8,text/plain" />
+          <button id="loadRawPlaylist">
+            <i class="fas fa-paste"></i> Load Text
+          </button>
+        </div>
+      </div>
+      <div id="playlistDropZone" class="playlist-dropzone" tabindex="0">
+        <i class="fas fa-cloud-upload-alt"></i>
+        <span>Drop a playlist file here</span>
+      </div>
+      <p id="playlistFeedback" class="playlist-feedback" data-tone="neutral">
+        Load a playlist from URL, local file, or pasted content.
+      </p>
     </div>
     <div class="sections">
       <!-- Channels Section -->

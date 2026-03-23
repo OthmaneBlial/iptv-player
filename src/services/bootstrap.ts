@@ -40,6 +40,8 @@ function normalizePlaylist(playlist: PlaylistRecord | null): PlaylistRecord | nu
   return {
     ...playlist,
     channels: playlist.channels.map((channel) => normalizeChannel(channel)),
+    sourceLabel: playlist.sourceLabel || playlist.name || "Imported playlist",
+    sourceType: playlist.sourceType || "url",
   };
 }
 

@@ -9,21 +9,68 @@ let observer: IntersectionObserver | null = null;
 
 export async function fetchPlaylist(url: string): Promise<void> {
   try {
+    setPlaylistFeedback("Loading playlist from remote URL...", "neutral");
     const response = await fetch(url);
     if (!response.ok) throw new Error("Network response was not ok");
     const data = await response.text();
-    const channels = parseM3U(data);
-    const playlist = createPlaylistRecord(url, channels);
-    appStore.setPlaylist(playlist);
-    setStoredPlaylist(playlist);
-    renderPlaylistState();
+    importPlaylistFromText(data, {
+      sourceLabel: url,
+      sourceType: "url",
+      url,
+    });
   } catch (error) {
+    setPlaylistFeedback(
+      "Failed to load playlist. Check the URL and try again.",
+      "error"
+    );
     alert("Failed to load playlist. Please check the URL.");
     console.error(error);
   }
 }
 
-export function parseM3U(data: string): Channel[] {
+export async function loadPlaylistFile(file: File): Promise<void> {
+  try {
+    setPlaylistFeedback(`Loading ${file.name}...`, "neutral");
+    const text = await file.text();
+    importPlaylistFromText(text, {
+      sourceLabel: file.name,
+      sourceType: "file",
+      url: file.name,
+    });
+  } catch (error) {
+    setPlaylistFeedback("Failed to read the selected file.", "error");
+    console.error(error);
+  }
+}
+
+export function importPlaylistFromText(
+  data: string,
+  options: {
+    sourceLabel: string;
+    sourceType: PlaylistRecord["sourceType"];
+    url: string;
+  }
+): void {
+  const channels = parseM3U(data, options.url);
+  if (!channels.length) {
+    setPlaylistFeedback(
+      "No playable channels were found in the playlist content.",
+      "error"
+    );
+    throw new Error("Playlist contained no playable channels.");
+  }
+
+  const playlist = createPlaylistRecord(options, channels);
+  appStore.setPlaylist(playlist);
+  setStoredPlaylist(playlist);
+  renderPlaylistState();
+  setPlaylistFeedback(
+    `Imported ${channels.length} channels from ${options.sourceLabel}.`,
+    "success"
+  );
+}
+
+export function parseM3U(data: string, baseUrl = ""): Channel[] {
   const lines = data.split("\n");
   const channels: Channel[] = [];
   let currentChannel: Partial<Channel> = {};
@@ -34,8 +81,24 @@ export function parseM3U(data: string): Channel[] {
       const info = parseEXTINF(line);
       currentChannel = { ...info };
     } else if (line && !line.startsWith("#")) {
-      currentChannel.url = line;
-      channels.push(currentChannel as Channel);
+      const resolvedUrl = resolveChannelUrl(line, baseUrl);
+      if (!resolvedUrl) {
+        return;
+      }
+
+      currentChannel.url = resolvedUrl;
+      channels.push({
+        displayName: currentChannel.displayName || currentChannel.name || "Unknown",
+        group: currentChannel.group || "Ungrouped",
+        id: currentChannel.id || "",
+        logo: currentChannel.logo || "",
+        name:
+          currentChannel.name ||
+          currentChannel.displayName ||
+          "Unknown",
+        url: resolvedUrl,
+      });
+      currentChannel = {};
     }
   });
 
@@ -43,22 +106,57 @@ export function parseM3U(data: string): Channel[] {
 }
 
 function parseEXTINF(line: string): Partial<Channel> {
-  const regex =
-    /#EXTINF:-?\d+ tvg-id="([^"]*)" tvg-name="([^"]*)" tvg-logo="([^"]*)" group-title="([^"]*)",(.*)/;
-  const match = line.match(regex);
-  if (match) {
-    return {
-      id: match[1],
-      name: match[2],
-      logo: match[3],
-      group: match[4],
-      displayName: match[5],
-    };
-  } else {
-    const parts = line.split(",");
-    return {
-      displayName: parts[1] || "Unknown",
-    };
+  const separatorIndex = line.indexOf(",");
+  const metadata =
+    separatorIndex >= 0 ? line.slice(0, separatorIndex) : line;
+  const title =
+    separatorIndex >= 0 ? line.slice(separatorIndex + 1) : "Unknown";
+  const attributes = parseAttributes(metadata);
+
+  return {
+    displayName: title.trim() || attributes["tvg-name"] || "Unknown",
+    group: attributes["group-title"] || "Ungrouped",
+    id: attributes["tvg-id"] || "",
+    logo: attributes["tvg-logo"] || "",
+    name: attributes["tvg-name"] || title.trim() || "Unknown",
+  };
+}
+
+function parseAttributes(metadata: string): Record<string, string> {
+  const attributes: Record<string, string> = {};
+  const attributePattern = /([\w-]+)="([^"]*)"/g;
+  let match = attributePattern.exec(metadata);
+
+  while (match) {
+    attributes[match[1]] = match[2];
+    match = attributePattern.exec(metadata);
+  }
+
+  return attributes;
+}
+
+function resolveChannelUrl(url: string, baseUrl: string): string | null {
+  if (!url) {
+    return null;
+  }
+
+  if (/^https?:\/\//i.test(url)) {
+    return url;
+  }
+
+  if (url.startsWith("//")) {
+    return `https:${url}`;
+  }
+
+  if (!baseUrl || !/^https?:\/\//i.test(baseUrl)) {
+    return url;
+  }
+
+  try {
+    return new URL(url, baseUrl).toString();
+  } catch (error) {
+    console.warn("Could not resolve relative channel URL.", error);
+    return null;
   }
 }
 
@@ -174,16 +272,22 @@ function getFilteredChannels(): Channel[] {
 }
 
 function createPlaylistRecord(
-  url: string,
+  options: {
+    sourceLabel: string;
+    sourceType: PlaylistRecord["sourceType"];
+    url: string;
+  },
   channels: Channel[]
 ): PlaylistRecord {
-  const label = url.split("/").pop() || "Imported playlist";
+  const label = options.sourceLabel.split("/").pop() || "Imported playlist";
   return {
     channels,
     id: "default-playlist",
     lastLoadedAt: new Date().toISOString(),
     name: label.replace(/\.m3u8?$/i, "") || "Imported playlist",
-    url,
+    sourceLabel: options.sourceLabel,
+    sourceType: options.sourceType,
+    url: options.url,
   };
 }
 
@@ -198,7 +302,7 @@ export function renderPlaylistState(): void {
     "playlistUrl"
   ) as HTMLInputElement | null;
   if (playlistUrlInput && activePlaylist) {
-    playlistUrlInput.value = activePlaylist.url;
+    playlistUrlInput.value = activePlaylist.sourceType === "url" ? activePlaylist.url : "";
   }
 }
 
@@ -206,4 +310,17 @@ export function findChannelByUrl(url: string): Channel | undefined {
   return appStore
     .getState()
     .playlist?.channels.find((channel) => channel.url === url);
+}
+
+function setPlaylistFeedback(
+  message: string,
+  tone: "error" | "neutral" | "success"
+): void {
+  const feedback = document.getElementById("playlistFeedback");
+  if (!feedback) {
+    return;
+  }
+
+  feedback.textContent = message;
+  feedback.setAttribute("data-tone", tone);
 }

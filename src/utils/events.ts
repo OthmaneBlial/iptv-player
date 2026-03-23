@@ -1,4 +1,9 @@
-import { fetchPlaylist, filterChannels } from "./playlist";
+import {
+  fetchPlaylist,
+  filterChannels,
+  importPlaylistFromText,
+  loadPlaylistFile,
+} from "./playlist";
 import { clearHistory } from "./history"; // Import the clearHistory function
 
 export function setupEventListeners(): void {
@@ -6,6 +11,18 @@ export function setupEventListeners(): void {
   const playlistUrlInput = document.getElementById(
     "playlistUrl"
   ) as HTMLInputElement;
+  const playlistFileInput = document.getElementById(
+    "playlistFile"
+  ) as HTMLInputElement;
+  const rawPlaylistInput = document.getElementById(
+    "rawPlaylistInput"
+  ) as HTMLTextAreaElement;
+  const loadRawPlaylistBtn = document.getElementById(
+    "loadRawPlaylist"
+  ) as HTMLElement;
+  const playlistDropZone = document.getElementById(
+    "playlistDropZone"
+  ) as HTMLElement;
   const searchChannelsInput = document.getElementById(
     "searchChannels"
   ) as HTMLInputElement;
@@ -31,6 +48,58 @@ export function setupEventListeners(): void {
     if (event.key === "Enter") {
       importBtn.click();
     }
+  });
+
+  playlistFileInput.addEventListener("change", async () => {
+    const [file] = playlistFileInput.files || [];
+    if (!file) {
+      return;
+    }
+
+    await loadPlaylistFile(file);
+    playlistFileInput.value = "";
+  });
+
+  loadRawPlaylistBtn.addEventListener("click", () => {
+    const text = rawPlaylistInput.value.trim();
+    if (!text) {
+      alert("Paste playlist content before loading raw text.");
+      return;
+    }
+
+    try {
+      importPlaylistFromText(text, {
+        sourceLabel: "pasted playlist",
+        sourceType: "text",
+        url: "pasted-playlist",
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  });
+
+  ["dragenter", "dragover"].forEach((eventName) => {
+    playlistDropZone.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      playlistDropZone.classList.add("is-active");
+    });
+  });
+
+  ["dragleave", "dragend"].forEach((eventName) => {
+    playlistDropZone.addEventListener(eventName, () => {
+      playlistDropZone.classList.remove("is-active");
+    });
+  });
+
+  playlistDropZone.addEventListener("drop", async (event) => {
+    event.preventDefault();
+    playlistDropZone.classList.remove("is-active");
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    await loadPlaylistFile(file);
   });
 
   // Event listener for Clear History button
