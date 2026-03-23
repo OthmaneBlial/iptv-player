@@ -1,0 +1,26 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          cache: npm
+          node-version: 20
+
+      - run: npm ci
+      - run: npm run build
+      - run: tar -czf broadcast-console-dist.tgz dist
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: broadcast-console-dist.tgz

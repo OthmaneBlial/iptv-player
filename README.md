@@ -64,6 +64,7 @@ Additionally, you can use the IPTV playlist from the following source: https://i
 
 - **npm start**: Launches the development server.
 - **npm run build**: Builds the project for production.
+- **npm test**: Runs the automated test suite.
 - **npm run lint**: Lints TypeScript files.
 - **npm run format**: Formats code with Prettier.
 
@@ -77,3 +78,11 @@ Additionally, you can use the IPTV playlist from the following source: https://i
 ## License
 
 This project is licensed under the MIT License.
+
+## Deployment
+
+- Static deploy: build with `npm run build` and serve the `dist/` folder.
+- Docker: build with `docker build -t broadcast-console .` and run on port `8080`.
+- Release automation: push a tag like `v1.0.1` to trigger the release workflow.
+
+Detailed deployment notes live in `docs/deployment.md`.
