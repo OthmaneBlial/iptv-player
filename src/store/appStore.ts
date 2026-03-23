@@ -9,7 +9,11 @@ let state: AppState = {
   defaultPlaylistId: null,
   favorites: [],
   filters: {
+    country: "all",
+    group: "all",
+    language: "all",
     query: "",
+    sort: "name",
   },
   history: [],
   player: {

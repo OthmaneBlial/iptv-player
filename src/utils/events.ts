@@ -5,11 +5,14 @@ import {
   exportPlaylistLibrary,
   fetchPlaylist,
   filterChannels,
+  getPlaylistById,
   importPlaylistLibraryBackup,
   importPlaylistFromText,
   loadPlaylistFile,
   renamePlaylist,
+  setQuickGroupFilter,
   setDefaultPlaylist,
+  updateChannelDiscoveryFilters,
 } from "./playlist";
 import { clearHistory } from "./history"; // Import the clearHistory function
 
@@ -42,6 +45,21 @@ export function setupEventListeners(): void {
   const searchChannelsInput = document.getElementById(
     "searchChannels"
   ) as HTMLInputElement;
+  const channelGroupFilter = document.getElementById(
+    "channelGroupFilter"
+  ) as HTMLSelectElement;
+  const channelCountryFilter = document.getElementById(
+    "channelCountryFilter"
+  ) as HTMLSelectElement;
+  const channelLanguageFilter = document.getElementById(
+    "channelLanguageFilter"
+  ) as HTMLSelectElement;
+  const channelSort = document.getElementById(
+    "channelSort"
+  ) as HTMLSelectElement;
+  const channelGroupChips = document.getElementById(
+    "channelGroupChips"
+  ) as HTMLElement;
   const clearHistoryBtn = document.getElementById(
     "clearHistory"
   ) as HTMLElement; // Get the Clear History button
@@ -58,6 +76,44 @@ export function setupEventListeners(): void {
   searchChannelsInput.addEventListener("input", (e) => {
     const query = (e.target as HTMLInputElement).value.trim().toLowerCase();
     filterChannels(query);
+  });
+
+  channelGroupFilter.addEventListener("change", (event) => {
+    updateChannelDiscoveryFilters({
+      group: (event.target as HTMLSelectElement).value,
+    });
+  });
+
+  channelCountryFilter.addEventListener("change", (event) => {
+    updateChannelDiscoveryFilters({
+      country: (event.target as HTMLSelectElement).value,
+    });
+  });
+
+  channelLanguageFilter.addEventListener("change", (event) => {
+    updateChannelDiscoveryFilters({
+      language: (event.target as HTMLSelectElement).value,
+    });
+  });
+
+  channelSort.addEventListener("change", (event) => {
+    updateChannelDiscoveryFilters({
+      sort: (event.target as HTMLSelectElement).value as
+        | "favorites"
+        | "group"
+        | "name"
+        | "recent",
+    });
+  });
+
+  channelGroupChips.addEventListener("click", (event) => {
+    const target = event.target as HTMLElement;
+    const group = target.getAttribute("data-group-chip");
+    if (!group) {
+      return;
+    }
+
+    setQuickGroupFilter(group);
   });
 
   playlistUrlInput.addEventListener("keydown", (event) => {
@@ -132,7 +188,8 @@ export function setupEventListeners(): void {
 
     switch (action) {
       case "rename": {
-        const nextName = prompt("Rename playlist", "");
+        const playlist = getPlaylistById(playlistId);
+        const nextName = prompt("Rename playlist", playlist?.name || "");
         if (nextName) {
           renamePlaylist(playlistId, nextName);
         }

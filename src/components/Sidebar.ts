@@ -62,6 +62,26 @@ export function Sidebar(): HTMLElement {
           Channels (<span id="channelCount">0</span>) <i class="fas fa-chevron-down"></i>
         </div>
         <input type="text" id="searchChannels" class="search-input" placeholder="Search Channels" />
+        <div class="channel-discovery">
+          <div class="channel-filter-grid">
+            <select id="channelGroupFilter" class="channel-filter-select">
+              <option value="all">All Categories</option>
+            </select>
+            <select id="channelCountryFilter" class="channel-filter-select">
+              <option value="all">All Countries</option>
+            </select>
+            <select id="channelLanguageFilter" class="channel-filter-select">
+              <option value="all">All Languages</option>
+            </select>
+            <select id="channelSort" class="channel-filter-select">
+              <option value="name">A-Z</option>
+              <option value="recent">Recently Watched</option>
+              <option value="favorites">Favorites First</option>
+              <option value="group">Group Order</option>
+            </select>
+          </div>
+          <div id="channelGroupChips" class="channel-group-chips"></div>
+        </div>
         <ul class="channel-list collapsed" id="channelsList">
           <!-- Channels will be populated here -->
         </ul>

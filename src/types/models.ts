@@ -1,7 +1,9 @@
 export type ThemeMode = "dark" | "light";
 
 export interface Channel {
+  country: string;
   id: string;
+  language: string;
   name: string;
   logo: string;
   group: string;
@@ -57,7 +59,11 @@ export interface PlayerState {
 }
 
 export interface FilterState {
+  country: string;
+  group: string;
+  language: string;
   query: string;
+  sort: "favorites" | "group" | "name" | "recent";
 }
 
 export interface AppState {

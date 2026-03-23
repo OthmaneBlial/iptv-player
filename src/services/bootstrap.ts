@@ -24,7 +24,9 @@ function normalizeTheme(theme: string | null): ThemeMode {
 
 function normalizeChannel(channel: Partial<Channel>): Channel {
   return {
+    country: channel.country || "",
     id: channel.id || "",
+    language: channel.language || "",
     name: channel.name || channel.displayName || "Unknown",
     logo: channel.logo || "",
     group: channel.group || "Ungrouped",
@@ -111,7 +113,11 @@ export function bootstrapAppState(): void {
     defaultPlaylistId,
     favorites,
     filters: {
+      country: "all",
+      group: "all",
+      language: "all",
       query: "",
+      sort: "name",
     },
     history,
     player: {

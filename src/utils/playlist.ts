@@ -102,9 +102,11 @@ export function parseM3U(data: string, baseUrl = ""): Channel[] {
 
       currentChannel.url = resolvedUrl;
       channels.push({
+        country: currentChannel.country || "",
         displayName: currentChannel.displayName || currentChannel.name || "Unknown",
         group: currentChannel.group || "Ungrouped",
         id: currentChannel.id || "",
+        language: currentChannel.language || "",
         logo: currentChannel.logo || "",
         name:
           currentChannel.name ||
@@ -128,9 +130,11 @@ function parseEXTINF(line: string): Partial<Channel> {
   const attributes = parseAttributes(metadata);
 
   return {
+    country: attributes["tvg-country"] || "",
     displayName: title.trim() || attributes["tvg-name"] || "Unknown",
     group: attributes["group-title"] || "Ungrouped",
     id: attributes["tvg-id"] || "",
+    language: attributes["tvg-language"] || "",
     logo: attributes["tvg-logo"] || "",
     name: attributes["tvg-name"] || title.trim() || "Unknown",
   };
@@ -181,6 +185,12 @@ export function displayChannels(): void {
   }
 
   const filteredChannels = getFilteredChannels();
+  if (!filteredChannels.length) {
+    renderEmptyChannelsState(channelsList);
+    updateChannelCount();
+    return;
+  }
+
   const fragment = document.createDocumentFragment();
   const end = Math.min(
     loadedChannels + CHANNELS_PER_LOAD,
@@ -197,7 +207,11 @@ export function displayChannels(): void {
         }"></i>
       </span>
       <div class="channel-info">
-        <span class="channel-name">${channel.displayName}</span>
+        ${createChannelLogoMarkup(channel)}
+        <div class="channel-copy">
+          <span class="channel-name">${channel.displayName}</span>
+          <span class="channel-meta">${createChannelMeta(channel)}</span>
+        </div>
       </div>
     `;
 
@@ -248,10 +262,7 @@ function observeScroll(): void {
 
 export function filterChannels(query: string): void {
   appStore.setFilters({ query });
-  loadedChannels = 0;
-  clearChannels();
-  displayChannels();
-  updateChannelCount(); // Update the channel count after filtering
+  renderPlaylistState();
 }
 
 // Function to update the channel count in the sidebar
@@ -271,18 +282,76 @@ function clearChannels(): void {
   }
 }
 
+export function updateChannelDiscoveryFilters(
+  filters: Partial<{
+    country: string;
+    group: string;
+    language: string;
+    sort: "favorites" | "group" | "name" | "recent";
+  }>
+): void {
+  appStore.setFilters(filters);
+  renderPlaylistState();
+}
+
+export function setQuickGroupFilter(group: string): void {
+  appStore.setFilters({ group });
+  renderPlaylistState();
+}
+
+export function getPlaylistById(playlistId: string): PlaylistRecord | undefined {
+  return appStore
+    .getState()
+    .playlists.find((playlist) => playlist.id === playlistId);
+}
+
 function getFilteredChannels(): Channel[] {
   const { filters } = appStore.getState();
   const channels = getActivePlaylist()?.channels || [];
   const normalizedQuery = filters.query.toLowerCase();
 
+  const filtered = channels.filter((channel) => {
+    if (filters.group !== "all" && channel.group !== filters.group) {
+      return false;
+    }
+    if (filters.country !== "all" && channel.country !== filters.country) {
+      return false;
+    }
+    if (filters.language !== "all" && channel.language !== filters.language) {
+      return false;
+    }
+    if (!normalizedQuery) {
+      return true;
+    }
+
+    return (
+      getFuzzyScore(channel.displayName, normalizedQuery) >= 0 ||
+      getFuzzyScore(channel.group, normalizedQuery) >= 0 ||
+      getFuzzyScore(channel.country, normalizedQuery) >= 0 ||
+      getFuzzyScore(channel.language, normalizedQuery) >= 0
+    );
+  });
+
+  const sorted = sortChannels(filtered);
   if (!normalizedQuery) {
-    return channels;
+    return sorted;
   }
 
-  return channels.filter((channel) =>
-    channel.displayName.toLowerCase().includes(normalizedQuery)
-  );
+  return sorted.sort((left, right) => {
+    const leftScore = Math.max(
+      getFuzzyScore(left.displayName, normalizedQuery),
+      getFuzzyScore(left.group, normalizedQuery),
+      getFuzzyScore(left.country, normalizedQuery),
+      getFuzzyScore(left.language, normalizedQuery)
+    );
+    const rightScore = Math.max(
+      getFuzzyScore(right.displayName, normalizedQuery),
+      getFuzzyScore(right.group, normalizedQuery),
+      getFuzzyScore(right.country, normalizedQuery),
+      getFuzzyScore(right.language, normalizedQuery)
+    );
+    return rightScore - leftScore;
+  });
 }
 
 function createPlaylistRecord(
@@ -307,6 +376,7 @@ function createPlaylistRecord(
 
 export function renderPlaylistState(): void {
   renderPlaylistLibrary();
+  renderDiscoveryControls();
   loadedChannels = 0;
   clearChannels();
   displayChannels();
@@ -343,6 +413,178 @@ function setPlaylistFeedback(
 
 function createPlaylistId(): string {
   return `playlist-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getDiscoveryOptions(): {
+  countries: string[];
+  groups: string[];
+  languages: string[];
+} {
+  const activePlaylist = getActivePlaylist();
+  const channels = activePlaylist?.channels || [];
+
+  return {
+    countries: getUniqueSortedValues(channels.map((channel) => channel.country)),
+    groups: getUniqueSortedValues(channels.map((channel) => channel.group)),
+    languages: getUniqueSortedValues(channels.map((channel) => channel.language)),
+  };
+}
+
+function getUniqueSortedValues(values: string[]): string[] {
+  return [...new Set(values.filter(Boolean))].sort((left, right) =>
+    left.localeCompare(right)
+  );
+}
+
+function getRecentChannelOrder(): string[] {
+  return appStore.getState().history.map((item) => item.url);
+}
+
+function getFuzzyScore(value: string, query: string): number {
+  if (!query) {
+    return 0;
+  }
+
+  const normalizedValue = value.toLowerCase();
+  if (normalizedValue.includes(query)) {
+    return 1000 - normalizedValue.indexOf(query);
+  }
+
+  let score = 0;
+  let queryIndex = 0;
+  for (const character of normalizedValue) {
+    if (character === query[queryIndex]) {
+      score += 10;
+      queryIndex += 1;
+      if (queryIndex === query.length) {
+        return score;
+      }
+    }
+  }
+
+  return -1;
+}
+
+function sortChannels(channels: Channel[]): Channel[] {
+  const { sort } = appStore.getState().filters;
+  const favorites = new Set(getFavorites());
+  const recentOrder = getRecentChannelOrder();
+
+  return [...channels].sort((left, right) => {
+    if (sort === "favorites") {
+      const favoriteDelta =
+        Number(favorites.has(right.url)) - Number(favorites.has(left.url));
+      if (favoriteDelta !== 0) {
+        return favoriteDelta;
+      }
+    }
+
+    if (sort === "recent") {
+      const leftIndex = recentOrder.indexOf(left.url);
+      const rightIndex = recentOrder.indexOf(right.url);
+      if (leftIndex !== rightIndex) {
+        if (leftIndex === -1) {
+          return 1;
+        }
+        if (rightIndex === -1) {
+          return -1;
+        }
+        return leftIndex - rightIndex;
+      }
+    }
+
+    if (sort === "group") {
+      const groupCompare = left.group.localeCompare(right.group);
+      if (groupCompare !== 0) {
+        return groupCompare;
+      }
+    }
+
+    return left.displayName.localeCompare(right.displayName);
+  });
+}
+
+function renderDiscoveryControls(): void {
+  const groupFilter = document.getElementById(
+    "channelGroupFilter"
+  ) as HTMLSelectElement | null;
+  const countryFilter = document.getElementById(
+    "channelCountryFilter"
+  ) as HTMLSelectElement | null;
+  const languageFilter = document.getElementById(
+    "channelLanguageFilter"
+  ) as HTMLSelectElement | null;
+  const sortFilter = document.getElementById(
+    "channelSort"
+  ) as HTMLSelectElement | null;
+  const groupChips = document.getElementById("channelGroupChips");
+
+  const { countries, groups, languages } = getDiscoveryOptions();
+  const filters = appStore.getState().filters;
+
+  if (groupFilter) {
+    groupFilter.innerHTML = `<option value="all">All Categories</option>${groups
+      .map((group) => `<option value="${group}">${group}</option>`)
+      .join("")}`;
+    groupFilter.value = filters.group;
+  }
+
+  if (countryFilter) {
+    countryFilter.innerHTML = `<option value="all">All Countries</option>${countries
+      .map((country) => `<option value="${country}">${country}</option>`)
+      .join("")}`;
+    countryFilter.value = filters.country;
+  }
+
+  if (languageFilter) {
+    languageFilter.innerHTML = `<option value="all">All Languages</option>${languages
+      .map((language) => `<option value="${language}">${language}</option>`)
+      .join("")}`;
+    languageFilter.value = filters.language;
+  }
+
+  if (sortFilter) {
+    sortFilter.value = filters.sort;
+  }
+
+  if (groupChips) {
+    const featuredGroups = groups.slice(0, 8);
+    groupChips.innerHTML = `
+      <button class="channel-chip${
+        filters.group === "all" ? " is-active" : ""
+      }" data-group-chip="all">All</button>
+      ${featuredGroups
+        .map(
+          (group) => `<button class="channel-chip${
+            filters.group === group ? " is-active" : ""
+          }" data-group-chip="${group}">${group}</button>`
+        )
+        .join("")}
+    `;
+  }
+}
+
+function createChannelMeta(channel: Channel): string {
+  return [channel.group, channel.country, channel.language]
+    .filter(Boolean)
+    .join(" • ");
+}
+
+function createChannelLogoMarkup(channel: Channel): string {
+  if (channel.logo) {
+    return `<img class="channel-logo" src="${channel.logo}" alt="${channel.displayName} logo" loading="lazy" />`;
+  }
+
+  return `<span class="channel-logo-placeholder">${channel.displayName
+    .slice(0, 1)
+    .toUpperCase()}</span>`;
+}
+
+function renderEmptyChannelsState(channelsList: HTMLElement): void {
+  const li = document.createElement("li");
+  li.className = "channel-item channel-empty-state";
+  li.textContent = "No channels match the current filters.";
+  channelsList.appendChild(li);
 }
 
 function getActivePlaylist(): PlaylistRecord | null {
