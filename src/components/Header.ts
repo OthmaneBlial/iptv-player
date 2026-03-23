@@ -27,7 +27,10 @@ export function Header(): HTMLElement {
       </div>
     </div>
     <div class="header-actions">
-      <div class="header-note">Desktop, tablet, and mobile ready</div>
+      <div class="header-note" id="installStatus">Installable web app available</div>
+      <button class="toggle-theme install-button" id="installAppButton" hidden>
+        <i class="fas fa-download"></i> Install App
+      </button>
       <button class="toggle-theme" id="toggleTheme">
         <i class="fas fa-moon"></i> Dark Mode
       </button>

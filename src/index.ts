@@ -5,6 +5,7 @@ import { Sidebar } from "./components/Sidebar";
 import { bootstrapAppState } from "./services/bootstrap";
 import { initializeHeaderSummary } from "./services/headerService";
 import { initializePlayerService } from "./services/playerService";
+import { initializePwa } from "./services/pwaService";
 import { initializeKeyboardShortcuts } from "./services/shortcutService";
 import { setupEventListeners } from "./utils/events";
 import { initializeEpg } from "./utils/epg";
@@ -39,6 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeHeaderSummary();
   initializePlayerService();
   initializeKeyboardShortcuts();
+  initializePwa();
   initializeEpg();
   renderPlaylistState();
   displayFavorites();
