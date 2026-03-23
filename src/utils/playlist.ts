@@ -16,6 +16,7 @@ import {
   togglePinned,
 } from "./favorites";
 import { logDiagnostic } from "./diagnostics";
+import { getProxyAwareUrl } from "./network";
 import { isGroupBlockedForProfile } from "./profiles";
 import {
   getSourceHealthLabel,
@@ -56,7 +57,7 @@ async function parseM3UAsync(data: string, baseUrl = ""): Promise<Channel[]> {
 export async function fetchPlaylist(url: string): Promise<void> {
   try {
     setPlaylistFeedback("Loading playlist from remote URL...", "neutral");
-    const response = await fetch(url);
+    const response = await fetch(getProxyAwareUrl(url));
     if (!response.ok) throw new Error("Network response was not ok");
     const data = await response.text();
     await importPlaylistFromText(data, {

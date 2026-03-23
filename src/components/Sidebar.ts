@@ -53,7 +53,7 @@ export function Sidebar(): HTMLElement {
       <div class="import-block">
         <label for="syncToken">Cloud Sync</label>
         <form id="syncForm" class="sync-form">
-          <input type="password" id="syncToken" placeholder="GitHub token for private gist sync" aria-label="GitHub token for cloud sync" />
+          <input type="password" id="syncToken" placeholder="GitHub token for private gist sync" aria-label="GitHub token for cloud sync" autocomplete="current-password" />
           <input type="text" id="syncGistId" placeholder="Existing gist ID or leave empty to create one" aria-label="GitHub gist identifier" />
           <div class="import-row import-row--compact">
             <button id="pushCloudSync" type="button">

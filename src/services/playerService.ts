@@ -4,6 +4,11 @@ import { LastPlayedChannel, PlayerTrackOption } from "../types/models";
 import { logDiagnostic } from "../utils/diagnostics";
 import { addToHistory } from "../utils/history";
 import {
+  getProxyAwareUrl,
+  isIgnorablePlaybackError,
+  isStreamProxyEnabled,
+} from "../utils/network";
+import {
   markSourcePlaybackFailure,
   markSourcePlaybackSuccess,
   reportSourceIssue,
@@ -31,6 +36,7 @@ let playerRetriesBadge: HTMLElement | null = null;
 let reportCurrentStreamButton: HTMLButtonElement | null = null;
 let lastRequestedChannel: LastPlayedChannel | null = null;
 let lastConfirmedHealthyUrl = "";
+let playbackSessionId = 0;
 
 function teardownHls(): void {
   if (hls) {
@@ -39,10 +45,52 @@ function teardownHls(): void {
   }
 
   if (video) {
+    video.onloadedmetadata = null;
     video.pause();
     video.removeAttribute("src");
     video.load();
   }
+}
+
+function getHlsErrorMessage(data: {
+  details?: string;
+  response?: {
+    code?: number;
+    text?: string;
+  };
+  type?: string;
+}): string {
+  if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+    const statusCode = data.response?.code;
+    const statusSuffix = statusCode ? ` Upstream status ${statusCode}.` : "";
+    return isStreamProxyEnabled()
+      ? `The stream request failed upstream. The source may be offline, geo-blocked, or refusing the proxy request.${statusSuffix}`
+      : `The stream request was blocked. This usually means the source does not allow browser playback from your current origin.${statusSuffix}`;
+  }
+
+  if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+    return "The stream loaded, but the media could not be decoded by the browser.";
+  }
+
+  return "This stream could not be played in HLS mode.";
+}
+
+function requestVideoPlayback(sessionId: number): void {
+  if (!video || sessionId !== playbackSessionId) {
+    return;
+  }
+
+  void video.play().catch((error) => {
+    if (sessionId !== playbackSessionId || isIgnorablePlaybackError(error)) {
+      return;
+    }
+
+    logDiagnostic("warn", "Autoplay was blocked by the browser.");
+    appStore.setPlayer({
+      errorMessage: "Autoplay was blocked. Use the player controls to start playback.",
+      status: "idle",
+    });
+  });
 }
 
 function persistPreferences(): void {
@@ -184,6 +232,7 @@ function startPlayback(
 
   lastRequestedChannel = currentChannel;
   lastConfirmedHealthyUrl = "";
+  const currentPlaybackSessionId = ++playbackSessionId;
   syncStoredChannel(currentChannel);
   if (!options.resetRetries) {
     appStore.setPlayer({
@@ -197,13 +246,17 @@ function startPlayback(
     hls = new Hls({
       enableWorker: true,
       lowLatencyMode: true,
+      xhrSetup: (xhr, url) => {
+        const proxiedUrl = getProxyAwareUrl(url);
+        if (proxiedUrl !== url) {
+          xhr.open("GET", proxiedUrl, true);
+        }
+      },
     });
     hls.loadSource(currentChannel.url);
     hls.attachMedia(video);
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
-      video?.play().catch((error) => {
-        console.error("Autoplay failed.", error);
-      });
+      requestVideoPlayback(currentPlaybackSessionId);
     });
     hls.on(Hls.Events.LEVELS_UPDATED, (_, data) => {
       const qualityLevels: PlayerTrackOption[] = [
@@ -254,9 +307,14 @@ function startPlayback(
       if (!data.fatal) {
         return;
       }
-      logDiagnostic("error", "Fatal HLS playback error detected.", currentChannel.url);
+      const errorMessage = getHlsErrorMessage(data);
+      logDiagnostic(
+        "error",
+        `Fatal HLS playback error detected (${data.type || "unknown"}:${data.details || "unknown"}).`,
+        currentChannel.url
+      );
       markSourcePlaybackFailure(currentChannel.url, currentChannel.name);
-      handlePlaybackRetry("This stream could not be played in HLS mode.");
+      handlePlaybackRetry(errorMessage);
     });
   } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
     video.src = currentChannel.url;
@@ -275,9 +333,7 @@ function startPlayback(
       ],
     });
     video.onloadedmetadata = () => {
-      video?.play().catch((error) => {
-        console.error("Autoplay failed.", error);
-      });
+      requestVideoPlayback(currentPlaybackSessionId);
     };
   } else {
     appStore.setPlayer({
