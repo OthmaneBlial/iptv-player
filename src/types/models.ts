@@ -19,6 +19,12 @@ export interface PlaylistRecord {
   sourceType: "file" | "text" | "url";
 }
 
+export interface PlaylistLibrarySnapshot {
+  activePlaylistId: string | null;
+  defaultPlaylistId: string | null;
+  playlists: PlaylistRecord[];
+}
+
 export interface FavoriteRecord {
   url: string;
   addedAt: string;
@@ -55,10 +61,12 @@ export interface FilterState {
 }
 
 export interface AppState {
+  activePlaylistId: string | null;
+  defaultPlaylistId: string | null;
   favorites: FavoriteRecord[];
   filters: FilterState;
   history: HistoryItem[];
   player: PlayerState;
-  playlist: PlaylistRecord | null;
+  playlists: PlaylistRecord[];
   theme: ThemeMode;
 }

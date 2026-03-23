@@ -13,6 +13,7 @@ import {
   getPlayerPreferences,
   getStoredFavorites,
   getStoredHistory,
+  getStoredPlaylistLibrary,
   getStoredPlaylist,
   getStoredTheme,
 } from "../utils/storage";
@@ -43,6 +44,12 @@ function normalizePlaylist(playlist: PlaylistRecord | null): PlaylistRecord | nu
     sourceLabel: playlist.sourceLabel || playlist.name || "Imported playlist",
     sourceType: playlist.sourceType || "url",
   };
+}
+
+function normalizePlaylists(playlists: PlaylistRecord[]): PlaylistRecord[] {
+  return playlists
+    .map((playlist) => normalizePlaylist(playlist))
+    .filter(Boolean) as PlaylistRecord[];
 }
 
 function normalizeHistory(history: HistoryItem[]): HistoryItem[] {
@@ -79,13 +86,29 @@ function normalizeLastPlayed(
 
 export function bootstrapAppState(): void {
   const theme = normalizeTheme(getStoredTheme());
-  const playlist = normalizePlaylist(getStoredPlaylist());
+  const storedLibrary = getStoredPlaylistLibrary();
+  const legacyPlaylist = normalizePlaylist(getStoredPlaylist());
+  const playlists = storedLibrary
+    ? normalizePlaylists(storedLibrary.playlists)
+    : legacyPlaylist
+      ? [legacyPlaylist]
+      : [];
+  const defaultPlaylistId =
+    storedLibrary?.defaultPlaylistId ||
+    playlists[0]?.id ||
+    null;
+  const activePlaylistId =
+    storedLibrary?.activePlaylistId ||
+    defaultPlaylistId ||
+    null;
   const favorites = normalizeFavorites(getStoredFavorites());
   const history = normalizeHistory(getStoredHistory());
   const preferences = normalizePlayerPreferences(getPlayerPreferences());
   const lastPlayed = normalizeLastPlayed(getLastPlayedChannel());
 
   appStore.replaceState({
+    activePlaylistId,
+    defaultPlaylistId,
     favorites,
     filters: {
       query: "",
@@ -97,7 +120,7 @@ export function bootstrapAppState(): void {
       preferences,
       status: "idle",
     },
-    playlist,
+    playlists,
     theme,
   });
 }

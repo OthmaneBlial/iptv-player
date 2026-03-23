@@ -5,6 +5,8 @@ type Listener = (state: AppState) => void;
 const listeners = new Set<Listener>();
 
 let state: AppState = {
+  activePlaylistId: null,
+  defaultPlaylistId: null,
   favorites: [],
   filters: {
     query: "",
@@ -19,7 +21,7 @@ let state: AppState = {
     },
     status: "idle",
   },
-  playlist: null,
+  playlists: [],
   theme: "dark",
 };
 
@@ -41,6 +43,22 @@ export const appStore = {
     state = {
       ...state,
       favorites,
+    };
+    emit();
+  },
+
+  setActivePlaylistId(activePlaylistId: string | null): void {
+    state = {
+      ...state,
+      activePlaylistId,
+    };
+    emit();
+  },
+
+  setDefaultPlaylistId(defaultPlaylistId: string | null): void {
+    state = {
+      ...state,
+      defaultPlaylistId,
     };
     emit();
   },
@@ -79,10 +97,10 @@ export const appStore = {
     emit();
   },
 
-  setPlaylist(playlist: PlaylistRecord | null): void {
+  setPlaylists(playlists: PlaylistRecord[]): void {
     state = {
       ...state,
-      playlist,
+      playlists,
     };
     emit();
   },

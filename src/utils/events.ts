@@ -1,8 +1,15 @@
 import {
+  activatePlaylist,
+  deletePlaylist,
+  duplicatePlaylist,
+  exportPlaylistLibrary,
   fetchPlaylist,
   filterChannels,
+  importPlaylistLibraryBackup,
   importPlaylistFromText,
   loadPlaylistFile,
+  renamePlaylist,
+  setDefaultPlaylist,
 } from "./playlist";
 import { clearHistory } from "./history"; // Import the clearHistory function
 
@@ -23,6 +30,15 @@ export function setupEventListeners(): void {
   const playlistDropZone = document.getElementById(
     "playlistDropZone"
   ) as HTMLElement;
+  const playlistLibraryList = document.getElementById(
+    "playlistLibraryList"
+  ) as HTMLElement;
+  const exportPlaylistLibraryBtn = document.getElementById(
+    "exportPlaylistLibrary"
+  ) as HTMLElement;
+  const importPlaylistLibraryFile = document.getElementById(
+    "importPlaylistLibraryFile"
+  ) as HTMLInputElement;
   const searchChannelsInput = document.getElementById(
     "searchChannels"
   ) as HTMLInputElement;
@@ -100,6 +116,63 @@ export function setupEventListeners(): void {
     }
 
     await loadPlaylistFile(file);
+  });
+
+  playlistLibraryList.addEventListener("click", (event) => {
+    const target = event.target as HTMLElement;
+    const action = target
+      .closest("[data-library-action]")
+      ?.getAttribute("data-library-action");
+    const playlistItem = target.closest("[data-playlist-id]");
+    const playlistId = playlistItem?.getAttribute("data-playlist-id");
+
+    if (!playlistId) {
+      return;
+    }
+
+    switch (action) {
+      case "rename": {
+        const nextName = prompt("Rename playlist", "");
+        if (nextName) {
+          renamePlaylist(playlistId, nextName);
+        }
+        break;
+      }
+      case "duplicate":
+        duplicatePlaylist(playlistId);
+        break;
+      case "default":
+        setDefaultPlaylist(playlistId);
+        break;
+      case "delete":
+        if (confirm("Delete this playlist from your library?")) {
+          deletePlaylist(playlistId);
+        }
+        break;
+      case "activate":
+      default:
+        activatePlaylist(playlistId);
+        break;
+    }
+  });
+
+  exportPlaylistLibraryBtn.addEventListener("click", () => {
+    exportPlaylistLibrary();
+  });
+
+  importPlaylistLibraryFile.addEventListener("change", async () => {
+    const [file] = importPlaylistLibraryFile.files || [];
+    if (!file) {
+      return;
+    }
+
+    try {
+      await importPlaylistLibraryBackup(file);
+      importPlaylistLibraryFile.value = "";
+    } catch (error) {
+      alert("Could not import playlist backup.");
+      console.error(error);
+    }
   });
 
   // Event listener for Clear History button

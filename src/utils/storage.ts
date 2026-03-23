@@ -3,11 +3,13 @@ import {
   HistoryItem,
   LastPlayedChannel,
   PlayerPreferences,
+  PlaylistLibrarySnapshot,
   PlaylistRecord,
 } from "../types/models";
 
 const STORAGE_KEYS = {
   lastPlayed: "player.lastPlayed",
+  playlistLibrary: "playlist.library",
   playerPreferences: "player.preferences",
   playlist: "playlist",
   theme: "theme",
@@ -49,6 +51,19 @@ export function getStoredPlaylist(): PlaylistRecord | null {
 
 export function setStoredPlaylist(playlist: PlaylistRecord): void {
   localStorage.setItem(STORAGE_KEYS.playlist, JSON.stringify(playlist));
+}
+
+export function getStoredPlaylistLibrary(): PlaylistLibrarySnapshot | null {
+  return parseJSON<PlaylistLibrarySnapshot | null>(
+    localStorage.getItem(STORAGE_KEYS.playlistLibrary),
+    null
+  );
+}
+
+export function setStoredPlaylistLibrary(
+  snapshot: PlaylistLibrarySnapshot
+): void {
+  localStorage.setItem(STORAGE_KEYS.playlistLibrary, JSON.stringify(snapshot));
 }
 
 export function getStoredFavorites(): FavoriteRecord[] {

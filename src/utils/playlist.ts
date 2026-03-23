@@ -1,7 +1,14 @@
 import { appStore } from "../store/appStore";
-import { Channel, PlaylistRecord } from "../types/models";
+import {
+  Channel,
+  PlaylistLibrarySnapshot,
+  PlaylistRecord,
+} from "../types/models";
 import { getFavorites, toggleFavorite } from "./favorites";
-import { setStoredPlaylist } from "./storage";
+import {
+  setStoredPlaylist,
+  setStoredPlaylistLibrary,
+} from "./storage";
 
 let loadedChannels = 0;
 const CHANNELS_PER_LOAD = 50;
@@ -61,8 +68,15 @@ export function importPlaylistFromText(
   }
 
   const playlist = createPlaylistRecord(options, channels);
-  appStore.setPlaylist(playlist);
+  const { playlists } = appStore.getState();
+  const nextPlaylists = [playlist, ...playlists];
+  appStore.setPlaylists(nextPlaylists);
+  appStore.setActivePlaylistId(playlist.id);
+  if (!appStore.getState().defaultPlaylistId) {
+    appStore.setDefaultPlaylistId(playlist.id);
+  }
   setStoredPlaylist(playlist);
+  persistPlaylistLibrary();
   renderPlaylistState();
   setPlaylistFeedback(
     `Imported ${channels.length} channels from ${options.sourceLabel}.`,
@@ -258,8 +272,8 @@ function clearChannels(): void {
 }
 
 function getFilteredChannels(): Channel[] {
-  const { playlist, filters } = appStore.getState();
-  const channels = playlist?.channels || [];
+  const { filters } = appStore.getState();
+  const channels = getActivePlaylist()?.channels || [];
   const normalizedQuery = filters.query.toLowerCase();
 
   if (!normalizedQuery) {
@@ -282,7 +296,7 @@ function createPlaylistRecord(
   const label = options.sourceLabel.split("/").pop() || "Imported playlist";
   return {
     channels,
-    id: "default-playlist",
+    id: createPlaylistId(),
     lastLoadedAt: new Date().toISOString(),
     name: label.replace(/\.m3u8?$/i, "") || "Imported playlist",
     sourceLabel: options.sourceLabel,
@@ -292,12 +306,13 @@ function createPlaylistRecord(
 }
 
 export function renderPlaylistState(): void {
+  renderPlaylistLibrary();
   loadedChannels = 0;
   clearChannels();
   displayChannels();
   updateChannelCount();
 
-  const activePlaylist = appStore.getState().playlist;
+  const activePlaylist = getActivePlaylist();
   const playlistUrlInput = document.getElementById(
     "playlistUrl"
   ) as HTMLInputElement | null;
@@ -309,7 +324,8 @@ export function renderPlaylistState(): void {
 export function findChannelByUrl(url: string): Channel | undefined {
   return appStore
     .getState()
-    .playlist?.channels.find((channel) => channel.url === url);
+    .playlists.flatMap((playlist) => playlist.channels)
+    .find((channel) => channel.url === url);
 }
 
 function setPlaylistFeedback(
@@ -323,4 +339,195 @@ function setPlaylistFeedback(
 
   feedback.textContent = message;
   feedback.setAttribute("data-tone", tone);
+}
+
+function createPlaylistId(): string {
+  return `playlist-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getActivePlaylist(): PlaylistRecord | null {
+  const { activePlaylistId, defaultPlaylistId, playlists } = appStore.getState();
+  return (
+    playlists.find((playlist) => playlist.id === activePlaylistId) ||
+    playlists.find((playlist) => playlist.id === defaultPlaylistId) ||
+    playlists[0] ||
+    null
+  );
+}
+
+function persistPlaylistLibrary(): void {
+  const snapshot: PlaylistLibrarySnapshot = {
+    activePlaylistId: appStore.getState().activePlaylistId,
+    defaultPlaylistId: appStore.getState().defaultPlaylistId,
+    playlists: appStore.getState().playlists,
+  };
+
+  setStoredPlaylistLibrary(snapshot);
+
+  const activePlaylist = getActivePlaylist();
+  if (activePlaylist) {
+    setStoredPlaylist(activePlaylist);
+  }
+}
+
+export function activatePlaylist(playlistId: string): void {
+  appStore.setActivePlaylistId(playlistId);
+  persistPlaylistLibrary();
+  renderPlaylistState();
+}
+
+export function renamePlaylist(playlistId: string, nextName: string): void {
+  const trimmedName = nextName.trim();
+  if (!trimmedName) {
+    return;
+  }
+
+  appStore.setPlaylists(
+    appStore.getState().playlists.map((playlist) =>
+      playlist.id === playlistId
+        ? {
+            ...playlist,
+            name: trimmedName,
+          }
+        : playlist
+    )
+  );
+  persistPlaylistLibrary();
+  renderPlaylistState();
+}
+
+export function duplicatePlaylist(playlistId: string): void {
+  const playlist = appStore
+    .getState()
+    .playlists.find((item) => item.id === playlistId);
+  if (!playlist) {
+    return;
+  }
+
+  const duplicate: PlaylistRecord = {
+    ...playlist,
+    id: createPlaylistId(),
+    lastLoadedAt: new Date().toISOString(),
+    name: `${playlist.name} Copy`,
+  };
+
+  appStore.setPlaylists([duplicate, ...appStore.getState().playlists]);
+  appStore.setActivePlaylistId(duplicate.id);
+  persistPlaylistLibrary();
+  renderPlaylistState();
+}
+
+export function deletePlaylist(playlistId: string): void {
+  const remainingPlaylists = appStore
+    .getState()
+    .playlists.filter((playlist) => playlist.id !== playlistId);
+  const nextActivePlaylistId =
+    appStore.getState().activePlaylistId === playlistId
+      ? remainingPlaylists[0]?.id || null
+      : appStore.getState().activePlaylistId;
+  const nextDefaultPlaylistId =
+    appStore.getState().defaultPlaylistId === playlistId
+      ? remainingPlaylists[0]?.id || null
+      : appStore.getState().defaultPlaylistId;
+
+  appStore.setPlaylists(remainingPlaylists);
+  appStore.setActivePlaylistId(nextActivePlaylistId);
+  appStore.setDefaultPlaylistId(nextDefaultPlaylistId);
+  persistPlaylistLibrary();
+  renderPlaylistState();
+}
+
+export function setDefaultPlaylist(playlistId: string): void {
+  appStore.setDefaultPlaylistId(playlistId);
+  persistPlaylistLibrary();
+  renderPlaylistState();
+}
+
+export function exportPlaylistLibrary(): void {
+  const snapshot: PlaylistLibrarySnapshot = {
+    activePlaylistId: appStore.getState().activePlaylistId,
+    defaultPlaylistId: appStore.getState().defaultPlaylistId,
+    playlists: appStore.getState().playlists,
+  };
+
+  const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
+    type: "application/json",
+  });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "iptv-playlist-library.json";
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+export async function importPlaylistLibraryBackup(file: File): Promise<void> {
+  const text = await file.text();
+  const parsed = JSON.parse(text) as PlaylistLibrarySnapshot;
+  const playlists = Array.isArray(parsed.playlists) ? parsed.playlists : [];
+  appStore.setPlaylists(playlists);
+  appStore.setActivePlaylistId(parsed.activePlaylistId || playlists[0]?.id || null);
+  appStore.setDefaultPlaylistId(
+    parsed.defaultPlaylistId || parsed.activePlaylistId || playlists[0]?.id || null
+  );
+  persistPlaylistLibrary();
+  renderPlaylistState();
+  setPlaylistFeedback(`Imported ${playlists.length} saved playlists.`, "success");
+}
+
+export function renderPlaylistLibrary(): void {
+  const playlistLibraryList = document.getElementById("playlistLibraryList");
+  if (!playlistLibraryList) {
+    return;
+  }
+
+  const { activePlaylistId, defaultPlaylistId, playlists } = appStore.getState();
+  if (!playlists.length) {
+    playlistLibraryList.innerHTML =
+      '<li class="playlist-library-empty">No saved playlists yet. Import one to get started.</li>';
+    return;
+  }
+
+  playlistLibraryList.innerHTML = "";
+  const fragment = document.createDocumentFragment();
+
+  playlists.forEach((playlist) => {
+    const item = document.createElement("li");
+    item.className = `playlist-library-item${
+      playlist.id === activePlaylistId ? " is-active" : ""
+    }`;
+    item.setAttribute("data-playlist-id", playlist.id);
+    item.innerHTML = `
+      <button class="playlist-library-main" data-library-action="activate">
+        <div>
+          <p class="playlist-library-name">${playlist.name}</p>
+          <div class="playlist-library-meta">
+            <span>${playlist.channels.length} channels</span>
+            <span>${playlist.sourceType}</span>
+            <span>${new Date(playlist.lastLoadedAt).toLocaleDateString()}</span>
+          </div>
+        </div>
+        <div class="playlist-library-badges">
+          ${
+            playlist.id === activePlaylistId
+              ? '<span class="playlist-badge playlist-badge--active">Active</span>'
+              : ""
+          }
+          ${
+            playlist.id === defaultPlaylistId
+              ? '<span class="playlist-badge">Default</span>'
+              : ""
+          }
+        </div>
+      </button>
+      <div class="playlist-library-actions">
+        <button class="playlist-action-button" data-library-action="rename">Rename</button>
+        <button class="playlist-action-button" data-library-action="duplicate">Duplicate</button>
+        <button class="playlist-action-button" data-library-action="default">Set Default</button>
+        <button class="playlist-action-button" data-library-action="delete">Delete</button>
+      </div>
+    `;
+    fragment.appendChild(item);
+  });
+
+  playlistLibraryList.appendChild(fragment);
 }

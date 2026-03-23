@@ -33,6 +33,28 @@ export function Sidebar(): HTMLElement {
         Load a playlist from URL, local file, or pasted content.
       </p>
     </div>
+    <div class="playlist-library-panel">
+      <div class="playlist-library-header">
+        <div>
+          <p class="playlist-library-kicker">Library</p>
+          <h2>Saved Playlists</h2>
+        </div>
+        <div class="playlist-library-tools">
+          <button id="exportPlaylistLibrary" class="library-tool-button">
+            Export
+          </button>
+          <label class="library-tool-button" for="importPlaylistLibraryFile">
+            Import Backup
+          </label>
+          <input
+            type="file"
+            id="importPlaylistLibraryFile"
+            accept="application/json"
+          />
+        </div>
+      </div>
+      <ul id="playlistLibraryList" class="playlist-library-list"></ul>
+    </div>
     <div class="sections">
       <!-- Channels Section -->
       <div class="section">
