@@ -292,6 +292,7 @@ export function setupEventListeners(): void {
         const tIcon = t.querySelector("i") as HTMLElement;
 
         tList.classList.add("collapsed");
+        t.setAttribute("aria-expanded", "false");
         tIcon.classList.remove("fa-chevron-up");
         tIcon.classList.add("fa-chevron-down");
       });
@@ -299,10 +300,12 @@ export function setupEventListeners(): void {
       // Toggle current section
       if (isCollapsed) {
         targetList.classList.remove("collapsed");
+        title.setAttribute("aria-expanded", "true");
         icon.classList.remove("fa-chevron-down");
         icon.classList.add("fa-chevron-up");
       } else {
         targetList.classList.add("collapsed");
+        title.setAttribute("aria-expanded", "false");
         icon.classList.remove("fa-chevron-up");
         icon.classList.add("fa-chevron-down");
       }

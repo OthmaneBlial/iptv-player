@@ -5,6 +5,7 @@ import { Sidebar } from "./components/Sidebar";
 import { bootstrapAppState } from "./services/bootstrap";
 import { initializeHeaderSummary } from "./services/headerService";
 import { initializePlayerService } from "./services/playerService";
+import { initializeKeyboardShortcuts } from "./services/shortcutService";
 import { setupEventListeners } from "./utils/events";
 import { initializeEpg } from "./utils/epg";
 import { displayFavorites } from "./utils/favorites";
@@ -20,8 +21,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const header = Header();
   appRoot.appendChild(header);
-
-  initializeTheme();
 
   const main = document.createElement("main");
   main.classList.add("main-container");
@@ -39,6 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeTheme();
   initializeHeaderSummary();
   initializePlayerService();
+  initializeKeyboardShortcuts();
   initializeEpg();
   renderPlaylistState();
   displayFavorites();

@@ -30,6 +30,11 @@ body {
   padding: 18px;
 }
 
+:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 3px;
+}
+
 #app {
   width: min(1500px, 100%);
   margin: 0 auto;
@@ -57,5 +62,25 @@ main {
 @media (max-width: 640px) {
   body {
     padding: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --panel-border: rgba(255, 255, 255, 0.28);
+  }
+
+  [data-theme="light"] {
+    --panel-border: rgba(12, 17, 15, 0.2);
   }
 }

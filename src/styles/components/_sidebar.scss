@@ -295,6 +295,10 @@ aside {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      background: none;
+      border: none;
+      text-align: left;
+      width: 100%;
 
       i {
         transition: transform var(--transition-speed);

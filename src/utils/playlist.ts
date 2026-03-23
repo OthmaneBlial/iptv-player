@@ -293,6 +293,27 @@ export function getPlaylistById(playlistId: string): PlaylistRecord | undefined 
     .playlists.find((playlist) => playlist.id === playlistId);
 }
 
+export function playAdjacentChannel(direction: -1 | 1): void {
+  const channels = getFilteredChannels();
+  if (!channels.length) {
+    return;
+  }
+
+  const currentUrl = appStore.getState().player.currentChannel?.url;
+  const currentIndex = channels.findIndex((channel) => channel.url === currentUrl);
+  const nextIndex =
+    currentIndex === -1
+      ? 0
+      : (currentIndex + direction + channels.length) % channels.length;
+  const nextChannel = channels[nextIndex];
+
+  window.dispatchEvent(
+    new CustomEvent("app:play-channel", {
+      detail: { name: nextChannel.displayName, url: nextChannel.url },
+    })
+  );
+}
+
 function getFilteredChannels(): Channel[] {
   const { filters } = appStore.getState();
   const channels = getActivePlaylist()?.channels || [];
