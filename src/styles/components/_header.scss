@@ -9,6 +9,18 @@ header {
   transition: background-color var(--transition-speed);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
+  .header-eyebrow {
+    color: var(--accent-color);
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 0.35rem;
+  }
+
+  h1 {
+    font-size: 1.65rem;
+  }
+
   [data-theme="light"] & {
     background-color: #ffffff;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);

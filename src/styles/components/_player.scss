@@ -5,6 +5,7 @@
   background-color: #000;
   position: relative;
   transition: background-color var(--transition-speed);
+  overflow: hidden;
 
   [data-theme="light"] & {
     background-color: #000;
@@ -14,6 +15,60 @@
     width: 100%;
     height: 100%;
     background-color: #000;
+  }
+
+  .player-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 26px;
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.08) 0%,
+      rgba(0, 0, 0, 0.16) 38%,
+      rgba(0, 0, 0, 0.74) 100%
+    );
+  }
+
+  .player-meta {
+    max-width: 560px;
+  }
+
+  .player-kicker {
+    font-size: 0.76rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #7be495;
+    margin-bottom: 0.5rem;
+  }
+
+  h2 {
+    font-size: clamp(1.6rem, 2.6vw, 2.7rem);
+    color: #fff;
+    margin-bottom: 0.5rem;
+  }
+
+  #playerStatus {
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.5;
+  }
+
+  .resume-button {
+    pointer-events: auto;
+    align-self: flex-end;
+    padding: 0.9rem 1.2rem;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #1db954, #7be495);
+    color: #09250f;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 16px 40px rgba(29, 185, 84, 0.24);
   }
 
   .controls {
@@ -74,5 +129,14 @@
 @media (max-width: 480px) {
   .player-container {
     height: 50vh;
+  }
+
+  .player-overlay {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .resume-button {
+    align-self: flex-start;
   }
 }

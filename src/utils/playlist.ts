@@ -1,6 +1,11 @@
 import Hls from "hls.js";
 import { addToHistory } from "./history";
 import { getFavorites, loadFavorites, toggleFavorite } from "./favorites";
+import {
+  setLastPlayedChannel,
+  getStoredPlaylist,
+  setStoredPlaylist,
+} from "./storage";
 
 interface Channel {
   id: string;
@@ -22,7 +27,11 @@ export async function fetchPlaylist(url: string): Promise<void> {
     if (!response.ok) throw new Error("Network response was not ok");
     const data = await response.text();
     parseM3U(data);
-    localStorage.setItem("playlist", JSON.stringify({ url, channels }));
+    setStoredPlaylist({
+      url,
+      channels,
+      lastLoadedAt: new Date().toISOString(),
+    });
   } catch (error) {
     alert("Failed to load playlist. Please check the URL.");
     console.error(error);
@@ -47,6 +56,7 @@ export function parseM3U(data: string): void {
 
   filteredChannels = channels;
   loadedChannels = 0;
+  clearChannels();
   displayChannels();
   updateChannelCount(); // Update the channel count after parsing
 }
@@ -73,6 +83,10 @@ function parseEXTINF(line: string): Partial<Channel> {
 
 export function displayChannels(): void {
   const channelsList = document.getElementById("channelsList") as HTMLElement;
+  if (!channelsList) {
+    return;
+  }
+
   const fragment = document.createDocumentFragment();
   const end = Math.min(
     loadedChannels + CHANNELS_PER_LOAD,
@@ -142,8 +156,7 @@ export function filterChannels(query: string): void {
     channel.displayName.toLowerCase().includes(query)
   );
   loadedChannels = 0;
-  const channelsList = document.getElementById("channelsList") as HTMLElement;
-  channelsList.innerHTML = "";
+  clearChannels();
   displayChannels();
   updateChannelCount(); // Update the channel count after filtering
 }
@@ -151,22 +164,38 @@ export function filterChannels(query: string): void {
 export function playChannel(url: string, channelName: string): void {
   const video = document.getElementById("videoPlayer") as HTMLVideoElement;
 
+  window.dispatchEvent(
+    new CustomEvent("channel:play", {
+      detail: { name: channelName, url },
+    })
+  );
+
   if (Hls.isSupported()) {
     const hls = new Hls();
     hls.loadSource(url); // Use the absolute URL directly
     hls.attachMedia(video);
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
-      video.play();
+      video.play().catch((error) => {
+        console.error("Autoplay failed.", error);
+      });
     });
   } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
     video.src = url; // Use the absolute URL directly
-    video.addEventListener("loadedmetadata", () => {
-      video.play();
-    });
+    video.onloadedmetadata = () => {
+      video.play().catch((error) => {
+        console.error("Autoplay failed.", error);
+      });
+    };
   } else {
     alert("Your browser does not support HLS playback.");
   }
+
   addToHistory(channelName, url);
+  setLastPlayedChannel({
+    name: channelName,
+    url,
+    playedAt: new Date().toISOString(),
+  });
 }
 
 // Function to update the channel count in the sidebar
@@ -177,4 +206,41 @@ function updateChannelCount(): void {
   if (channelCountSpan) {
     channelCountSpan.textContent = filteredChannels.length.toString();
   }
+}
+
+function clearChannels(): void {
+  const channelsList = document.getElementById("channelsList") as HTMLElement;
+  if (channelsList) {
+    channelsList.innerHTML = "";
+  }
+}
+
+export function restoreStoredPlaylist(): boolean {
+  const storedPlaylist = getStoredPlaylist();
+  if (!storedPlaylist) {
+    return false;
+  }
+
+  channels = storedPlaylist.channels.map((channel) => ({
+    id: channel.id || "",
+    name: channel.name || channel.displayName,
+    logo: channel.logo || "",
+    group: channel.group || "Ungrouped",
+    displayName: channel.displayName,
+    url: channel.url,
+  }));
+  filteredChannels = [...channels];
+  loadedChannels = 0;
+  clearChannels();
+  displayChannels();
+  updateChannelCount();
+
+  const playlistUrlInput = document.getElementById(
+    "playlistUrl"
+  ) as HTMLInputElement | null;
+  if (playlistUrlInput) {
+    playlistUrlInput.value = storedPlaylist.url;
+  }
+
+  return true;
 }
