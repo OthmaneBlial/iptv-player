@@ -3,6 +3,7 @@ import { Header } from "./components/Header";
 import { Player } from "./components/Player";
 import { Sidebar } from "./components/Sidebar";
 import { bootstrapAppState } from "./services/bootstrap";
+import { initializeHeaderSummary } from "./services/headerService";
 import { initializePlayerService } from "./services/playerService";
 import { setupEventListeners } from "./utils/events";
 import { initializeEpg } from "./utils/epg";
@@ -36,6 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bootstrapAppState();
   setupEventListeners();
   initializeTheme();
+  initializeHeaderSummary();
   initializePlayerService();
   initializeEpg();
   renderPlaylistState();

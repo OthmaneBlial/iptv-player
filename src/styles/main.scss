@@ -12,7 +12,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: "Poppins", sans-serif;
+  font-family: "IBM Plex Sans", sans-serif;
 }
 
 body {
@@ -20,13 +20,42 @@ body {
   color: var(--text-color);
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100vh;
   transition: background-color var(--transition-speed),
     color var(--transition-speed);
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(183, 244, 47, 0.12), transparent 28%),
+    radial-gradient(circle at 82% 14%, rgba(255, 178, 107, 0.16), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 40%);
+  padding: 18px;
+}
+
+#app {
+  width: min(1500px, 100%);
+  margin: 0 auto;
 }
 
 main {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+  gap: 18px;
   flex: 1;
-  overflow: hidden;
+  overflow: visible;
+  min-height: 0;
+}
+
+.main-container {
+  margin-top: 18px;
+}
+
+@media (max-width: 980px) {
+  main {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    padding: 12px;
+  }
 }

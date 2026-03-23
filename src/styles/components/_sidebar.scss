@@ -2,11 +2,15 @@ aside {
   width: var(--sidebar-width);
   background-color: var(--card-bg);
   padding: 20px;
-  overflow: hidden; // Remove overall scrolling
+  overflow: auto;
   display: flex;
   flex-direction: column;
   transition: background-color var(--transition-speed),
     width var(--transition-speed);
+  border: 1px solid var(--panel-border);
+  border-radius: 28px;
+  box-shadow: var(--panel-shadow);
+  backdrop-filter: blur(18px);
 
   [data-theme="light"] & {
     background-color: var(--card-bg);
@@ -135,7 +139,7 @@ aside {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    overflow: hidden; // Ensure no overflow from sections
+    overflow: visible;
   }
 
   .playlist-library-panel {
