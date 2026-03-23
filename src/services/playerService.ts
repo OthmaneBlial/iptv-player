@@ -1,6 +1,7 @@
 import Hls from "hls.js";
 import { appStore } from "../store/appStore";
 import { LastPlayedChannel, PlayerTrackOption } from "../types/models";
+import { logDiagnostic } from "../utils/diagnostics";
 import { addToHistory } from "../utils/history";
 import {
   setLastPlayedChannel,
@@ -182,6 +183,7 @@ function startPlayback(
     });
   }
   teardownHls();
+  logDiagnostic("info", `Starting playback for ${currentChannel.name}`, currentChannel.url);
 
   if (Hls.isSupported()) {
     hls = new Hls({
@@ -244,6 +246,7 @@ function startPlayback(
       if (!data.fatal) {
         return;
       }
+      logDiagnostic("error", "Fatal HLS playback error detected.", currentChannel.url);
       handlePlaybackRetry("This stream could not be played in HLS mode.");
     });
   } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
@@ -284,6 +287,7 @@ function startPlayback(
 function handlePlaybackRetry(errorMessage: string): void {
   const retries = appStore.getState().player.retries;
   if (!lastRequestedChannel || retries >= MAX_RETRIES) {
+    logDiagnostic("error", errorMessage, lastRequestedChannel?.url);
     appStore.setPlayer({
       errorMessage,
       status: "error",
@@ -296,6 +300,11 @@ function handlePlaybackRetry(errorMessage: string): void {
     retries: retries + 1,
     status: "loading",
   });
+  logDiagnostic(
+    "warn",
+    `Retrying playback (${retries + 1}/${MAX_RETRIES}).`,
+    lastRequestedChannel.url
+  );
 
   window.setTimeout(() => {
     if (!lastRequestedChannel) {
@@ -488,12 +497,14 @@ export function initializePlayerService(): void {
   });
 
   window.addEventListener("online", () => {
+    logDiagnostic("info", "Network connection restored.");
     appStore.setPlayer({
       networkStatus: "online",
     });
   });
 
   window.addEventListener("offline", () => {
+    logDiagnostic("warn", "Network connection lost.");
     appStore.setPlayer({
       errorMessage: "You appear to be offline.",
       networkStatus: "offline",

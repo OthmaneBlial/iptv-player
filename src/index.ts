@@ -8,6 +8,7 @@ import { initializePlayerService } from "./services/playerService";
 import { initializePwa } from "./services/pwaService";
 import { initializeKeyboardShortcuts } from "./services/shortcutService";
 import { setupEventListeners } from "./utils/events";
+import { initializeDiagnostics } from "./utils/diagnostics";
 import { initializeEpg } from "./utils/epg";
 import { displayFavorites } from "./utils/favorites";
 import { displayHistory } from "./utils/history";
@@ -40,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeHeaderSummary();
   initializePlayerService();
   initializeKeyboardShortcuts();
+  initializeDiagnostics();
   initializePwa();
   initializeEpg();
   renderPlaylistState();

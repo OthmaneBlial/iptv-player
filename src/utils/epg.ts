@@ -1,5 +1,6 @@
 import { appStore } from "../store/appStore";
 import { EpgChannel, EpgProgram, EpgState } from "../types/models";
+import { logDiagnostic } from "./diagnostics";
 import { setStoredEpg } from "./storage";
 
 function normalize(value: string): string {
@@ -141,9 +142,11 @@ export function loadEpgFromUrl(url: string): Promise<void> {
       return response.text();
     })
     .then((xmlText) => {
+      logDiagnostic("info", "Loaded XMLTV guide from remote source.", url);
       importEpgText(xmlText, url);
     })
     .catch((error) => {
+      logDiagnostic("error", "Remote EPG import failed.", url);
       setEpgFeedback("Could not load EPG data from this URL.", "error");
       throw error;
     });
@@ -151,6 +154,7 @@ export function loadEpgFromUrl(url: string): Promise<void> {
 
 export async function loadEpgFile(file: File): Promise<void> {
   setEpgFeedback(`Loading EPG file ${file.name}...`, "neutral");
+  logDiagnostic("info", "Loading XMLTV guide from file.", file.name);
   const xmlText = await file.text();
   importEpgText(xmlText, file.name);
 }
@@ -192,6 +196,7 @@ export function importEpgText(xmlText: string, sourceLabel: string): void {
 
   appStore.setEpg(epg);
   setStoredEpg(epg);
+  logDiagnostic("info", `Loaded ${programs.length} guide entries.`, sourceLabel);
   setEpgFeedback(
     `Loaded ${programs.length} guide entries from ${sourceLabel}.`,
     "success"

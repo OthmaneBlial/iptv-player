@@ -118,6 +118,7 @@ export function bootstrapAppState(): void {
   appStore.replaceState({
     activePlaylistId,
     defaultPlaylistId,
+    diagnostics: [],
     epg: epg || {
       channels: [],
       loadedAt: null,

@@ -5,6 +5,7 @@ describe("appStore", () => {
     appStore.replaceState({
       activePlaylistId: null,
       defaultPlaylistId: null,
+      diagnostics: [],
       epg: {
         channels: [],
         loadedAt: null,

@@ -106,6 +106,17 @@ export function Sidebar(): HTMLElement {
       </div>
       <!-- Favorites Section -->
       <div class="section">
+        <button class="list-title" type="button" data-target="diagnosticsList" aria-expanded="false">
+          Diagnostics <i class="fas fa-chevron-down"></i>
+        </button>
+        <button id="exportDiagnostics" class="clear-button">
+          <i class="fas fa-file-export"></i> Export Logs
+        </button>
+        <ul class="history-list collapsed" id="diagnosticsList">
+          <!-- Diagnostics will be populated here -->
+        </ul>
+      </div>
+      <div class="section">
         <button class="list-title" type="button" data-target="guideProgramsList" aria-expanded="false">
           Guide <i class="fas fa-chevron-down"></i>
         </button>

@@ -7,6 +7,7 @@ const listeners = new Set<Listener>();
 let state: AppState = {
   activePlaylistId: null,
   defaultPlaylistId: null,
+  diagnostics: [],
   epg: {
     channels: [],
     loadedAt: null,
@@ -77,6 +78,14 @@ export const appStore = {
     state = {
       ...state,
       epg,
+    };
+    emit();
+  },
+
+  setDiagnostics(diagnostics: AppState["diagnostics"]): void {
+    state = {
+      ...state,
+      diagnostics,
     };
     emit();
   },

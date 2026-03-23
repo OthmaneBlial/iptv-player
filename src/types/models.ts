@@ -47,6 +47,13 @@ export interface EpgState {
   sourceLabel: string | null;
 }
 
+export interface DiagnosticEntry {
+  context?: string;
+  level: "error" | "info" | "warn";
+  message: string;
+  timestamp: string;
+}
+
 export interface FavoriteRecord {
   url: string;
   addedAt: string;
@@ -101,6 +108,7 @@ export interface FilterState {
 export interface AppState {
   activePlaylistId: string | null;
   defaultPlaylistId: string | null;
+  diagnostics: DiagnosticEntry[];
   epg: EpgState;
   favorites: FavoriteRecord[];
   filters: FilterState;

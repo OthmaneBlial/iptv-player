@@ -15,6 +15,7 @@ import {
   toggleFavorite,
   togglePinned,
 } from "./favorites";
+import { logDiagnostic } from "./diagnostics";
 import {
   setStoredPlaylist,
   setStoredPlaylistLibrary,
@@ -60,6 +61,7 @@ export async function fetchPlaylist(url: string): Promise<void> {
       url,
     });
   } catch (error) {
+    logDiagnostic("error", "Remote playlist import failed.", url);
     setPlaylistFeedback(
       "Failed to load playlist. Check the URL and try again.",
       "error"
@@ -79,6 +81,7 @@ export async function loadPlaylistFile(file: File): Promise<void> {
       url: file.name,
     });
   } catch (error) {
+    logDiagnostic("error", "Playlist file import failed.", file.name);
     setPlaylistFeedback("Failed to read the selected file.", "error");
     console.error(error);
   }
@@ -115,6 +118,11 @@ export async function importPlaylistFromText(
   setPlaylistFeedback(
     `Imported ${channels.length} channels from ${options.sourceLabel}.`,
     "success"
+  );
+  logDiagnostic(
+    "info",
+    `Imported playlist with ${channels.length} channels.`,
+    options.sourceLabel
   );
 }
 
