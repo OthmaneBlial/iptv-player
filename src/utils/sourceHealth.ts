@@ -5,6 +5,7 @@ import {
   SourceHealthStatus,
 } from "../types/models";
 import { logDiagnostic } from "./diagnostics";
+import { isGroupBlockedForProfile } from "./profiles";
 import { setStoredSourceHealth } from "./storage";
 
 const SCAN_LIMIT = 12;
@@ -374,9 +375,19 @@ export function renderSourceHealth(): void {
   }
 
   const activeUrls = new Set(getActivePlaylistChannels().map((channel) => channel.url));
+  const channelMap = new Map(
+    getActivePlaylistChannels().map((channel) => [channel.url, channel])
+  );
   const sourceHealth = appStore
     .getState()
-    .sourceHealth.filter((entry) => activeUrls.has(entry.url))
+    .sourceHealth.filter((entry) => {
+      if (!activeUrls.has(entry.url)) {
+        return false;
+      }
+
+      const channel = channelMap.get(entry.url);
+      return channel ? !isGroupBlockedForProfile(channel.group) : true;
+    })
     .sort(compareSourceHealth)
     .slice(0, 20);
 

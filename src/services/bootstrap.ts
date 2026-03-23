@@ -4,19 +4,25 @@ import {
   FavoriteRecord,
   HistoryItem,
   LastPlayedChannel,
+  MultiviewState,
   PlayerPreferences,
   PlaylistRecord,
+  ProfileSnapshot,
   SourceHealthEntry,
   ThemeMode,
+  UserProfile,
 } from "../types/models";
+import { createDefaultProfiles } from "../utils/profileDefaults";
 import {
   getLastPlayedChannel,
+  getStoredMultiview,
   getStoredEpg,
   getPlayerPreferences,
   getStoredFavorites,
   getStoredHistory,
   getStoredPlaylistLibrary,
   getStoredPlaylist,
+  getStoredProfiles,
   getStoredSourceHealth,
   getStoredTheme,
 } from "../utils/storage";
@@ -91,6 +97,46 @@ function normalizeSourceHealth(
     }));
 }
 
+function normalizeProfiles(snapshot: ProfileSnapshot | null): {
+  activeProfileId: string | null;
+  profileAccessUnlocked: boolean;
+  profiles: UserProfile[];
+} {
+  const fallbackProfiles = createDefaultProfiles();
+  const profiles = (snapshot?.profiles || fallbackProfiles).map((profile) => ({
+    blockedGroups: Array.isArray(profile.blockedGroups)
+      ? profile.blockedGroups.filter(Boolean)
+      : [],
+    id: profile.id || `profile-${Math.random().toString(36).slice(2, 8)}`,
+    name: profile.name || "Profile",
+    pin: profile.pin || "",
+  }));
+  const activeProfileId =
+    snapshot?.activeProfileId && profiles.some((profile) => profile.id === snapshot.activeProfileId)
+      ? snapshot.activeProfileId
+      : profiles[0]?.id || null;
+
+  return {
+    activeProfileId,
+    profileAccessUnlocked: Boolean(snapshot?.profileAccessUnlocked),
+    profiles,
+  };
+}
+
+function normalizeMultiview(multiview: MultiviewState | null): MultiviewState {
+  return {
+    enabled: Boolean(multiview?.enabled),
+    layout: multiview?.layout === 4 ? 4 : 2,
+    miniPlayer: Boolean(multiview?.miniPlayer),
+    quickSwitchOpen: false,
+    slots: Array.isArray(multiview?.slots)
+      ? multiview.slots
+          .filter((slot) => Boolean(slot?.name) && Boolean(slot?.url))
+          .slice(0, 4)
+      : [],
+  };
+}
+
 function normalizePlayerPreferences(
   preferences: PlayerPreferences
 ): PlayerPreferences {
@@ -138,9 +184,12 @@ export function bootstrapAppState(): void {
   const preferences = normalizePlayerPreferences(getPlayerPreferences());
   const lastPlayed = normalizeLastPlayed(getLastPlayedChannel());
   const sourceHealth = normalizeSourceHealth(getStoredSourceHealth());
+  const profileSnapshot = normalizeProfiles(getStoredProfiles());
+  const multiview = normalizeMultiview(getStoredMultiview());
 
   appStore.replaceState({
     activePlaylistId,
+    activeProfileId: profileSnapshot.activeProfileId,
     defaultPlaylistId,
     diagnostics: [],
     epg: epg || {
@@ -158,6 +207,7 @@ export function bootstrapAppState(): void {
       sort: "name",
     },
     history,
+    multiview,
     player: {
       audioTracks: [
         {
@@ -181,6 +231,8 @@ export function bootstrapAppState(): void {
       status: "idle",
     },
     playlists,
+    profileAccessUnlocked: profileSnapshot.profileAccessUnlocked,
+    profiles: profileSnapshot.profiles,
     sourceHealth,
     theme,
   });

@@ -63,8 +63,26 @@ export function Player(): HTMLElement {
       <button id="reportCurrentStream" aria-label="Report current stream issue">
         <i class="fas fa-triangle-exclamation"></i> Report Stream
       </button>
+      <button id="toggleQuickSwitch" aria-label="Open quick switch">
+        <i class="fas fa-bolt"></i> Quick Switch
+      </button>
+      <button id="toggleMiniPlayer" aria-label="Toggle mini player">
+        <i class="fas fa-up-right-and-down-left-from-center"></i> Mini Player
+      </button>
+      <button id="toggleMultiview" aria-label="Toggle multiview mode">
+        <i class="fas fa-table-cells-large"></i> Multiview
+      </button>
+      <button id="addCurrentToMultiview" aria-label="Add current channel to multiview">
+        <i class="fas fa-plus"></i> Add Current
+      </button>
+      <select id="multiviewLayout" class="player-select" aria-label="Multiview layout">
+        <option value="2">2-Up</option>
+        <option value="4">4-Up</option>
+      </select>
     </div>
     <div id="guideDrawer" class="guide-drawer" aria-label="Guide drawer"></div>
+    <div id="quickSwitchOverlay" class="quick-switch-overlay" aria-label="Quick switch overlay" hidden></div>
+    <div id="multiviewGrid" class="multiview-grid" aria-label="Multiview grid" hidden></div>
     <video id="videoPlayer" controls aria-label="Video player"></video>
   `;
 

@@ -5,6 +5,7 @@ import {
   renderEmptyCollectionState,
 } from "./collections";
 import { findChannelByUrl, renderPlaylistState } from "./playlist";
+import { isGroupBlockedForProfile } from "./profiles";
 import { setStoredFavorites } from "./storage";
 
 export function toggleFavorite(channelUrl: string): void {
@@ -83,7 +84,7 @@ export function displayFavorites(): void {
 
   visibleFavorites.forEach((favorite: FavoriteRecord) => {
     const channel = findChannelByUrl(favorite.url);
-    if (channel) {
+    if (channel && !isGroupBlockedForProfile(channel.group)) {
       const li = createCollectionItemElement({
         isFavorite: true,
         isPinned: favorite.pinned,
@@ -104,6 +105,13 @@ export function displayFavorites(): void {
       favoritesList.appendChild(li);
     }
   });
+
+  if (!favoritesList.childElementCount) {
+    renderEmptyCollectionState(
+      favoritesList,
+      "No favorite channels are available for the active profile."
+    );
+  }
 }
 
 function displayPinnedFavorites(): void {
@@ -124,7 +132,7 @@ function displayPinnedFavorites(): void {
 
   pinnedFavorites.forEach((favorite) => {
     const channel = findChannelByUrl(favorite.url);
-    if (!channel) {
+    if (!channel || isGroupBlockedForProfile(channel.group)) {
       return;
     }
 
@@ -147,4 +155,11 @@ function displayPinnedFavorites(): void {
     });
     pinnedList.appendChild(li);
   });
+
+  if (!pinnedList.childElementCount) {
+    renderEmptyCollectionState(
+      pinnedList,
+      "Pinned channels are hidden or empty for this profile."
+    );
+  }
 }

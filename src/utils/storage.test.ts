@@ -1,8 +1,12 @@
 import {
   getStoredFavorites,
+  getStoredMultiview,
+  getStoredProfiles,
   getStoredSourceHealth,
   getStoredTheme,
   setStoredFavorites,
+  setStoredMultiview,
+  setStoredProfiles,
   setStoredSourceHealth,
   setStoredTheme,
 } from "./storage";
@@ -66,5 +70,61 @@ describe("storage helpers", () => {
         url: "https://example.com/live.m3u8",
       },
     ]);
+  });
+
+  it("stores and reads profile snapshots", () => {
+    setStoredProfiles({
+      activeProfileId: "profile-owner",
+      profileAccessUnlocked: false,
+      profiles: [
+        {
+          blockedGroups: ["Adult"],
+          id: "profile-owner",
+          name: "Owner",
+          pin: "1234",
+        },
+      ],
+    });
+
+    expect(getStoredProfiles()).toEqual({
+      activeProfileId: "profile-owner",
+      profileAccessUnlocked: false,
+      profiles: [
+        {
+          blockedGroups: ["Adult"],
+          id: "profile-owner",
+          name: "Owner",
+          pin: "1234",
+        },
+      ],
+    });
+  });
+
+  it("stores and reads multiview state", () => {
+    setStoredMultiview({
+      enabled: true,
+      layout: 4,
+      miniPlayer: true,
+      quickSwitchOpen: false,
+      slots: [
+        {
+          name: "BBC World",
+          url: "https://example.com/live.m3u8",
+        },
+      ],
+    });
+
+    expect(getStoredMultiview()).toEqual({
+      enabled: true,
+      layout: 4,
+      miniPlayer: true,
+      quickSwitchOpen: false,
+      slots: [
+        {
+          name: "BBC World",
+          url: "https://example.com/live.m3u8",
+        },
+      ],
+    });
   });
 });

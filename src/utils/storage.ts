@@ -3,18 +3,22 @@ import {
   FavoriteRecord,
   HistoryItem,
   LastPlayedChannel,
+  MultiviewState,
   PlayerPreferences,
   PlaylistLibrarySnapshot,
   PlaylistRecord,
+  ProfileSnapshot,
   SourceHealthEntry,
 } from "../types/models";
 
 const STORAGE_KEYS = {
   lastPlayed: "player.lastPlayed",
   epg: "epg",
+  multiview: "player.multiview",
   playlistLibrary: "playlist.library",
   playerPreferences: "player.preferences",
   playlist: "playlist",
+  profiles: "profiles",
   sourceHealth: "source.health",
   theme: "theme",
 } as const;
@@ -113,6 +117,28 @@ export function getStoredSourceHealth(): SourceHealthEntry[] {
 
 export function setStoredSourceHealth(sourceHealth: SourceHealthEntry[]): void {
   localStorage.setItem(STORAGE_KEYS.sourceHealth, JSON.stringify(sourceHealth));
+}
+
+export function getStoredProfiles(): ProfileSnapshot | null {
+  return parseJSON<ProfileSnapshot | null>(
+    localStorage.getItem(STORAGE_KEYS.profiles),
+    null
+  );
+}
+
+export function setStoredProfiles(snapshot: ProfileSnapshot): void {
+  localStorage.setItem(STORAGE_KEYS.profiles, JSON.stringify(snapshot));
+}
+
+export function getStoredMultiview(): MultiviewState | null {
+  return parseJSON<MultiviewState | null>(
+    localStorage.getItem(STORAGE_KEYS.multiview),
+    null
+  );
+}
+
+export function setStoredMultiview(multiview: MultiviewState): void {
+  localStorage.setItem(STORAGE_KEYS.multiview, JSON.stringify(multiview));
 }
 
 export function getPlayerPreferences(): PlayerPreferences {

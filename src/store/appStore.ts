@@ -6,6 +6,7 @@ const listeners = new Set<Listener>();
 
 let state: AppState = {
   activePlaylistId: null,
+  activeProfileId: null,
   defaultPlaylistId: null,
   diagnostics: [],
   epg: {
@@ -23,6 +24,13 @@ let state: AppState = {
     sort: "name",
   },
   history: [],
+  multiview: {
+    enabled: false,
+    layout: 2,
+    miniPlayer: false,
+    quickSwitchOpen: false,
+    slots: [],
+  },
   player: {
     audioTracks: [
       {
@@ -49,6 +57,8 @@ let state: AppState = {
     status: "idle",
   },
   playlists: [],
+  profileAccessUnlocked: false,
+  profiles: [],
   sourceHealth: [],
   theme: "dark",
 };
@@ -99,6 +109,14 @@ export const appStore = {
     emit();
   },
 
+  setActiveProfileId(activeProfileId: string | null): void {
+    state = {
+      ...state,
+      activeProfileId,
+    };
+    emit();
+  },
+
   setDefaultPlaylistId(defaultPlaylistId: string | null): void {
     state = {
       ...state,
@@ -126,6 +144,17 @@ export const appStore = {
     emit();
   },
 
+  setMultiview(multiview: Partial<AppState["multiview"]>): void {
+    state = {
+      ...state,
+      multiview: {
+        ...state.multiview,
+        ...multiview,
+      },
+    };
+    emit();
+  },
+
   setPlayer(player: Partial<PlayerState>): void {
     state = {
       ...state,
@@ -145,6 +174,22 @@ export const appStore = {
     state = {
       ...state,
       playlists,
+    };
+    emit();
+  },
+
+  setProfileAccessUnlocked(profileAccessUnlocked: boolean): void {
+    state = {
+      ...state,
+      profileAccessUnlocked,
+    };
+    emit();
+  },
+
+  setProfiles(profiles: AppState["profiles"]): void {
+    state = {
+      ...state,
+      profiles,
     };
     emit();
   },

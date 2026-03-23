@@ -4,7 +4,9 @@ import {
   setStoredEpg,
   setStoredFavorites,
   setStoredHistory,
+  setStoredMultiview,
   setStoredPlaylistLibrary,
+  setStoredProfiles,
   setStoredSourceHealth,
   setStoredTheme,
 } from "./storage";
@@ -20,12 +22,16 @@ interface SyncPayload {
   generatedAt: string;
   state: {
     activePlaylistId: string | null;
+    activeProfileId?: string | null;
     defaultPlaylistId: string | null;
     epg: ReturnType<typeof getSyncableState>["epg"];
     favorites: ReturnType<typeof getSyncableState>["favorites"];
     history: ReturnType<typeof getSyncableState>["history"];
+    multiview?: ReturnType<typeof getSyncableState>["multiview"];
     playerPreferences: ReturnType<typeof getSyncableState>["playerPreferences"];
     playlists: ReturnType<typeof getSyncableState>["playlists"];
+    profileAccessUnlocked?: ReturnType<typeof getSyncableState>["profileAccessUnlocked"];
+    profiles?: ReturnType<typeof getSyncableState>["profiles"];
     sourceHealth?: ReturnType<typeof getSyncableState>["sourceHealth"];
     theme: ReturnType<typeof getSyncableState>["theme"];
   };
@@ -37,12 +43,16 @@ function getSyncableState() {
   const state = appStore.getState();
   return {
     activePlaylistId: state.activePlaylistId,
+    activeProfileId: state.activeProfileId,
     defaultPlaylistId: state.defaultPlaylistId,
     epg: state.epg,
     favorites: state.favorites,
     history: state.history,
+    multiview: state.multiview,
     playerPreferences: state.player.preferences,
     playlists: state.playlists,
+    profileAccessUnlocked: state.profileAccessUnlocked,
+    profiles: state.profiles,
     sourceHealth: state.sourceHealth,
     theme: state.theme,
   };
@@ -100,15 +110,24 @@ function buildPayload(): SyncPayload {
 
 function applyPayload(payload: SyncPayload): void {
   const currentState = appStore.getState();
+  const multiview = payload.state.multiview || currentState.multiview;
+  const profiles = payload.state.profiles || currentState.profiles;
   const sourceHealth = payload.state.sourceHealth || [];
   const nextState = {
     ...currentState,
     activePlaylistId: payload.state.activePlaylistId,
+    activeProfileId: payload.state.activeProfileId || currentState.activeProfileId,
     defaultPlaylistId: payload.state.defaultPlaylistId,
     epg: payload.state.epg,
     favorites: payload.state.favorites,
     history: payload.state.history,
+    multiview,
     playlists: payload.state.playlists,
+    profileAccessUnlocked:
+      typeof payload.state.profileAccessUnlocked === "boolean"
+        ? payload.state.profileAccessUnlocked
+        : currentState.profileAccessUnlocked,
+    profiles,
     sourceHealth,
     theme: payload.state.theme,
     player: {
@@ -123,10 +142,19 @@ function applyPayload(payload: SyncPayload): void {
     defaultPlaylistId: payload.state.defaultPlaylistId,
     playlists: payload.state.playlists,
   });
+  setStoredProfiles({
+    activeProfileId: payload.state.activeProfileId || currentState.activeProfileId,
+    profileAccessUnlocked:
+      typeof payload.state.profileAccessUnlocked === "boolean"
+        ? payload.state.profileAccessUnlocked
+        : currentState.profileAccessUnlocked,
+    profiles,
+  });
   setStoredFavorites(payload.state.favorites);
   setStoredHistory(payload.state.history);
   setStoredTheme(payload.state.theme);
   setStoredEpg(payload.state.epg);
+  setStoredMultiview(multiview);
   setStoredSourceHealth(sourceHealth);
   setPlayerPreferences(payload.state.playerPreferences);
 }

@@ -25,8 +25,21 @@ export function Header(): HTMLElement {
         <span class="status-label">Guide</span>
         <strong id="headerGuideStatus">Not loaded</strong>
       </div>
+      <div class="status-pill">
+        <span class="status-label">Profile</span>
+        <strong id="headerProfileStatus">Owner • Open</strong>
+      </div>
     </div>
     <div class="header-actions">
+      <div class="profile-controls">
+        <label class="status-label" for="profileSelect">Profile</label>
+        <div class="profile-controls-row">
+          <select id="profileSelect" class="profile-select" aria-label="Active viewing profile"></select>
+          <button class="toggle-theme install-button" id="toggleProfileAccess" hidden>
+            Unlock Filters
+          </button>
+        </div>
+      </div>
       <div class="header-note" id="installStatus">Installable web app available</div>
       <button class="toggle-theme install-button" id="installAppButton" hidden>
         <i class="fas fa-download"></i> Install App

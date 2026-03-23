@@ -90,6 +90,14 @@ export function Sidebar(): HTMLElement {
       <ul id="playlistLibraryList" class="playlist-library-list"></ul>
     </div>
     <div class="sections">
+      <div class="section">
+        <button class="list-title" type="button" data-target="personalizedSections" aria-expanded="false">
+          For You <i class="fas fa-chevron-down"></i>
+        </button>
+        <ul class="history-list collapsed personalized-sections" id="personalizedSections">
+          <!-- Personalized recommendations render here -->
+        </ul>
+      </div>
       <!-- Channels Section -->
       <div class="section">
         <button class="list-title" type="button" data-target="channelsList" aria-expanded="false">

@@ -209,6 +209,173 @@
     font-size: 0.82rem;
     color: #7be495;
   }
+
+  .quick-switch-overlay {
+    position: absolute;
+    inset: 96px 20px 20px 20px;
+    z-index: 8;
+    border-radius: 24px;
+    background: rgba(7, 12, 10, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 1.15rem;
+    overflow-y: auto;
+  }
+
+  .quick-switch-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .quick-switch-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .quick-switch-kicker {
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #7be495;
+    margin-bottom: 0.25rem;
+  }
+
+  .quick-switch-copy {
+    color: rgba(255, 255, 255, 0.72);
+    line-height: 1.5;
+  }
+
+  .quick-switch-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+  }
+
+  .quick-switch-item {
+    padding: 1rem;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    gap: 0.85rem;
+
+    strong {
+      display: block;
+      margin-bottom: 0.3rem;
+      color: #fff;
+    }
+
+    span {
+      color: rgba(255, 255, 255, 0.68);
+      font-size: 0.82rem;
+    }
+  }
+
+  .quick-switch-actions,
+  .multiview-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: flex-end;
+  }
+
+  .multiview-grid {
+    position: absolute;
+    left: 20px;
+    bottom: 20px;
+    width: min(60%, 760px);
+    max-width: calc(100% - 40px);
+    z-index: 11;
+    display: grid;
+    gap: 0.75rem;
+
+    &--2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    &--4 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .multiview-tile {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    border-radius: 22px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #000;
+    }
+
+    &--empty {
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+      border-style: dashed;
+      background: rgba(255, 255, 255, 0.03);
+    }
+  }
+
+  .multiview-empty-copy {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.7);
+
+    p {
+      color: #fff;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+  }
+
+  .multiview-meta {
+    position: absolute;
+    inset: auto 0 0 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    align-items: flex-end;
+    padding: 0.9rem;
+    background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.82));
+
+    strong {
+      color: #fff;
+      max-width: 180px;
+    }
+  }
+
+  &.player-container--mini {
+    #videoPlayer {
+      position: absolute;
+      right: 20px;
+      bottom: 20px;
+      width: min(34%, 320px);
+      height: min(28%, 190px);
+      z-index: 12;
+      border-radius: 24px;
+      box-shadow: 0 24px 56px rgba(0, 0, 0, 0.42);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      object-fit: cover;
+    }
+
+    .player-overlay {
+      padding-right: min(38%, 360px);
+    }
+
+    .guide-drawer {
+      right: min(38%, 360px);
+      width: min(320px, calc(100% - 420px));
+    }
+  }
 }
 
 @media (max-width: 480px) {
@@ -228,5 +395,34 @@
 
   .resume-button {
     align-self: flex-start;
+  }
+
+  .quick-switch-list,
+  .multiview-grid--2,
+  .multiview-grid--4 {
+    grid-template-columns: 1fr;
+  }
+
+  .multiview-grid {
+    width: calc(100% - 20px);
+    left: 10px;
+    bottom: 10px;
+  }
+
+  .player-container.player-container--mini {
+    #videoPlayer {
+      width: calc(100% - 20px);
+      height: 180px;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+    }
+
+    .player-overlay,
+    .guide-drawer {
+      padding-right: 26px;
+      right: 10px;
+      width: calc(100% - 20px);
+    }
   }
 }

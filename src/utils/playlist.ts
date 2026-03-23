@@ -16,6 +16,7 @@ import {
   togglePinned,
 } from "./favorites";
 import { logDiagnostic } from "./diagnostics";
+import { isGroupBlockedForProfile } from "./profiles";
 import {
   getSourceHealthLabel,
   getSourceHealthRank,
@@ -362,6 +363,8 @@ function getFilteredChannels(): Channel[] {
       .join("|"),
     filters,
     history: appStore.getState().history.map((item) => item.url).join("|"),
+    activeProfileId: appStore.getState().activeProfileId,
+    profileAccessUnlocked: appStore.getState().profileAccessUnlocked,
     sourceHealth: appStore.getState().sourceHealth
       .map((entry) => `${entry.url}:${entry.status}:${entry.positiveReports}:${entry.negativeReports}:${entry.failures}`)
       .join("|"),
@@ -373,6 +376,9 @@ function getFilteredChannels(): Channel[] {
   const normalizedQuery = filters.query.toLowerCase();
 
   const filtered = channels.filter((channel) => {
+    if (isGroupBlockedForProfile(channel.group)) {
+      return false;
+    }
     if (filters.group !== "all" && channel.group !== filters.group) {
       return false;
     }

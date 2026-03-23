@@ -4,6 +4,7 @@ describe("appStore", () => {
   afterEach(() => {
     appStore.replaceState({
       activePlaylistId: null,
+      activeProfileId: null,
       defaultPlaylistId: null,
       diagnostics: [],
       epg: {
@@ -21,6 +22,13 @@ describe("appStore", () => {
         sort: "name",
       },
       history: [],
+      multiview: {
+        enabled: false,
+        layout: 2,
+        miniPlayer: false,
+        quickSwitchOpen: false,
+        slots: [],
+      },
       player: {
         audioTracks: [{ label: "Default Audio", value: -1 }],
         currentChannel: null,
@@ -37,6 +45,8 @@ describe("appStore", () => {
         status: "idle",
       },
       playlists: [],
+      profileAccessUnlocked: false,
+      profiles: [],
       sourceHealth: [],
       theme: "dark",
     });
@@ -89,5 +99,28 @@ describe("appStore", () => {
 
     expect(appStore.getState().sourceHealth).toHaveLength(1);
     expect(appStore.getState().sourceHealth[0].status).toBe("healthy");
+  });
+
+  it("merges multiview state updates", () => {
+    appStore.setMultiview({
+      enabled: true,
+      slots: [
+        {
+          name: "BBC World",
+          url: "https://example.com/live.m3u8",
+        },
+      ],
+    });
+
+    expect(appStore.getState().multiview).toMatchObject({
+      enabled: true,
+      layout: 2,
+      slots: [
+        {
+          name: "BBC World",
+          url: "https://example.com/live.m3u8",
+        },
+      ],
+    });
   });
 });

@@ -6,6 +6,7 @@ import {
 } from "./collections";
 import { isPinned, toggleFavorite, togglePinned } from "./favorites";
 import { findChannelByUrl } from "./playlist";
+import { isGroupBlockedForProfile } from "./profiles";
 import { setStoredHistory } from "./storage";
 
 export function addToHistory(channelName: string, url: string): void {
@@ -41,6 +42,9 @@ export function displayHistory(): void {
 
   appStore.getState().history.forEach((item: HistoryItem) => {
     const channel = findChannelByUrl(item.url);
+    if (channel && isGroupBlockedForProfile(channel.group)) {
+      return;
+    }
     const li = createCollectionItemElement({
       isFavorite: appStore.getState().favorites.some((favorite) => favorite.url === item.url),
       isPinned: isPinned(item.url),
@@ -61,6 +65,13 @@ export function displayHistory(): void {
     });
     historyList.appendChild(li);
   });
+
+  if (!historyList.childElementCount) {
+    renderEmptyCollectionState(
+      historyList,
+      "Your watch history is empty for the active profile."
+    );
+  }
 }
 
 // Function to clear the history

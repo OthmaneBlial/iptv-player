@@ -120,16 +120,46 @@ export interface FilterState {
   sort: "favorites" | "group" | "health" | "name" | "recent";
 }
 
+export interface UserProfile {
+  blockedGroups: string[];
+  id: string;
+  name: string;
+  pin: string;
+}
+
+export interface ProfileSnapshot {
+  activeProfileId: string | null;
+  profileAccessUnlocked: boolean;
+  profiles: UserProfile[];
+}
+
+export interface MultiviewSlot {
+  name: string;
+  url: string;
+}
+
+export interface MultiviewState {
+  enabled: boolean;
+  layout: 2 | 4;
+  miniPlayer: boolean;
+  quickSwitchOpen: boolean;
+  slots: MultiviewSlot[];
+}
+
 export interface AppState {
   activePlaylistId: string | null;
+  activeProfileId: string | null;
   defaultPlaylistId: string | null;
   diagnostics: DiagnosticEntry[];
   epg: EpgState;
   favorites: FavoriteRecord[];
   filters: FilterState;
   history: HistoryItem[];
+  multiview: MultiviewState;
   player: PlayerState;
   playlists: PlaylistRecord[];
+  profileAccessUnlocked: boolean;
+  profiles: UserProfile[];
   sourceHealth: SourceHealthEntry[];
   theme: ThemeMode;
 }

@@ -16,7 +16,8 @@ import {
   updateChannelDiscoveryFilters,
 } from "./playlist";
 import { loadEpgFile, loadEpgFromUrl } from "./epg";
-import { clearHistory } from "./history"; // Import the clearHistory function
+import { displayFavorites } from "./favorites";
+import { clearHistory, displayHistory } from "./history";
 import {
   confirmSourceWorking,
   reportSourceIssue,
@@ -361,5 +362,20 @@ export function setupEventListeners(): void {
 
   window.addEventListener("app:source-health-updated", () => {
     renderPlaylistState();
+  });
+
+  window.addEventListener("app:profile-updated", () => {
+    renderPlaylistState();
+    displayFavorites();
+    displayHistory();
+  });
+
+  window.addEventListener("app:set-group-filter", (event: Event) => {
+    const detail = (event as CustomEvent<{ group: string }>).detail;
+    if (!detail?.group) {
+      return;
+    }
+
+    setQuickGroupFilter(detail.group);
   });
 }
