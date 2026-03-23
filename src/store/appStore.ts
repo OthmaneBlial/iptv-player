@@ -7,6 +7,12 @@ const listeners = new Set<Listener>();
 let state: AppState = {
   activePlaylistId: null,
   defaultPlaylistId: null,
+  epg: {
+    channels: [],
+    loadedAt: null,
+    programs: [],
+    sourceLabel: null,
+  },
   favorites: [],
   filters: {
     country: "all",
@@ -63,6 +69,14 @@ export const appStore = {
     state = {
       ...state,
       favorites,
+    };
+    emit();
+  },
+
+  setEpg(epg: AppState["epg"]): void {
+    state = {
+      ...state,
+      epg,
     };
     emit();
   },

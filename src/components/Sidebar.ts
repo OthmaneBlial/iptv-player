@@ -32,6 +32,24 @@ export function Sidebar(): HTMLElement {
       <p id="playlistFeedback" class="playlist-feedback" data-tone="neutral">
         Load a playlist from URL, local file, or pasted content.
       </p>
+      <div class="import-block">
+        <label for="epgUrl">EPG XMLTV</label>
+        <div class="import-row">
+          <input type="text" id="epgUrl" placeholder="Enter XMLTV guide URL" />
+          <button id="loadEpgUrl">
+            <i class="fas fa-tv"></i> Load EPG
+          </button>
+        </div>
+        <div class="import-row import-row--compact">
+          <label class="file-import-button" for="epgFile">
+            <i class="fas fa-file-arrow-up"></i> Import EPG File
+          </label>
+          <input type="file" id="epgFile" accept=".xml,.xmltv,text/xml,application/xml" />
+        </div>
+        <p id="epgFeedback" class="playlist-feedback" data-tone="neutral">
+          Import XMLTV data to see now/next programming and schedule details.
+        </p>
+      </div>
     </div>
     <div class="playlist-library-panel">
       <div class="playlist-library-header">
@@ -87,6 +105,14 @@ export function Sidebar(): HTMLElement {
         </ul>
       </div>
       <!-- Favorites Section -->
+      <div class="section">
+        <div class="list-title" data-target="guideProgramsList">
+          Guide <i class="fas fa-chevron-down"></i>
+        </div>
+        <ul class="history-list collapsed" id="guideProgramsList">
+          <!-- Guide programs will be populated here -->
+        </ul>
+      </div>
       <div class="section">
         <div class="list-title" data-target="pinnedList">
           Pinned <i class="fas fa-chevron-down"></i>

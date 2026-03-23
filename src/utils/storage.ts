@@ -1,4 +1,5 @@
 import {
+  EpgState,
   FavoriteRecord,
   HistoryItem,
   LastPlayedChannel,
@@ -9,6 +10,7 @@ import {
 
 const STORAGE_KEYS = {
   lastPlayed: "player.lastPlayed",
+  epg: "epg",
   playlistLibrary: "playlist.library",
   playerPreferences: "player.preferences",
   playlist: "playlist",
@@ -64,6 +66,17 @@ export function setStoredPlaylistLibrary(
   snapshot: PlaylistLibrarySnapshot
 ): void {
   localStorage.setItem(STORAGE_KEYS.playlistLibrary, JSON.stringify(snapshot));
+}
+
+export function getStoredEpg(): EpgState | null {
+  return parseJSON<EpgState | null>(
+    localStorage.getItem(STORAGE_KEYS.epg),
+    null
+  );
+}
+
+export function setStoredEpg(epg: EpgState): void {
+  localStorage.setItem(STORAGE_KEYS.epg, JSON.stringify(epg));
 }
 
 export function getStoredFavorites(): FavoriteRecord[] {

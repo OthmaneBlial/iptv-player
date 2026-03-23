@@ -10,6 +10,7 @@ import {
 } from "../types/models";
 import {
   getLastPlayedChannel,
+  getStoredEpg,
   getPlayerPreferences,
   getStoredFavorites,
   getStoredHistory,
@@ -109,6 +110,7 @@ export function bootstrapAppState(): void {
     defaultPlaylistId ||
     null;
   const favorites = normalizeFavorites(getStoredFavorites());
+  const epg = getStoredEpg();
   const history = normalizeHistory(getStoredHistory());
   const preferences = normalizePlayerPreferences(getPlayerPreferences());
   const lastPlayed = normalizeLastPlayed(getLastPlayedChannel());
@@ -116,6 +118,12 @@ export function bootstrapAppState(): void {
   appStore.replaceState({
     activePlaylistId,
     defaultPlaylistId,
+    epg: epg || {
+      channels: [],
+      loadedAt: null,
+      programs: [],
+      sourceLabel: null,
+    },
     favorites,
     filters: {
       country: "all",

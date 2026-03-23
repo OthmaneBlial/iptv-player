@@ -27,6 +27,26 @@ export interface PlaylistLibrarySnapshot {
   playlists: PlaylistRecord[];
 }
 
+export interface EpgChannel {
+  displayName: string;
+  id: string;
+}
+
+export interface EpgProgram {
+  channelId: string;
+  description: string;
+  end: string;
+  start: string;
+  title: string;
+}
+
+export interface EpgState {
+  channels: EpgChannel[];
+  loadedAt: string | null;
+  programs: EpgProgram[];
+  sourceLabel: string | null;
+}
+
 export interface FavoriteRecord {
   url: string;
   addedAt: string;
@@ -81,6 +101,7 @@ export interface FilterState {
 export interface AppState {
   activePlaylistId: string | null;
   defaultPlaylistId: string | null;
+  epg: EpgState;
   favorites: FavoriteRecord[];
   filters: FilterState;
   history: HistoryItem[];

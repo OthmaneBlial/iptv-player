@@ -80,6 +80,22 @@
     line-height: 1.5;
   }
 
+  .player-guide-summary {
+    margin-top: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: rgba(255, 255, 255, 0.86);
+  }
+
+  #guideNowPlaying {
+    font-weight: 700;
+  }
+
+  #guideNextPlaying {
+    color: rgba(255, 255, 255, 0.74);
+  }
+
   .resume-button {
     pointer-events: auto;
     align-self: flex-end;
@@ -152,6 +168,42 @@
         }
       }
     }
+  }
+
+  .guide-drawer {
+    position: absolute;
+    top: 94px;
+    right: 20px;
+    width: min(360px, calc(100% - 40px));
+    max-height: calc(100% - 140px);
+    overflow-y: auto;
+    z-index: 9;
+    padding: 1rem;
+    border-radius: 18px;
+    background: rgba(0, 0, 0, 0.58);
+    backdrop-filter: blur(14px);
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  .guide-drawer-item {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 0.85rem;
+    color: rgba(255, 255, 255, 0.88);
+
+    p {
+      margin-top: 0.25rem;
+      color: rgba(255, 255, 255, 0.66);
+      line-height: 1.45;
+      font-size: 0.84rem;
+    }
+  }
+
+  .guide-drawer-time {
+    font-size: 0.82rem;
+    color: #7be495;
   }
 }
 

@@ -5,6 +5,7 @@ import { Sidebar } from "./components/Sidebar";
 import { bootstrapAppState } from "./services/bootstrap";
 import { initializePlayerService } from "./services/playerService";
 import { setupEventListeners } from "./utils/events";
+import { initializeEpg } from "./utils/epg";
 import { displayFavorites } from "./utils/favorites";
 import { displayHistory } from "./utils/history";
 import { renderPlaylistState } from "./utils/playlist";
@@ -36,6 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupEventListeners();
   initializeTheme();
   initializePlayerService();
+  initializeEpg();
   renderPlaylistState();
   displayFavorites();
   displayHistory();

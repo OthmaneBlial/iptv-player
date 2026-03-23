@@ -23,6 +23,10 @@ export function Player(): HTMLElement {
             ? "Ready to resume your last channel."
             : "Load a playlist, browse channels, and start playback."
         }</p>
+        <div class="player-guide-summary">
+          <p id="guideNowPlaying">No guide loaded.</p>
+          <p id="guideNextPlaying">Import XMLTV data to see now/next program details.</p>
+        </div>
       </div>
       <button id="resumeLastChannel" class="resume-button"${
         lastPlayedChannel ? "" : " hidden"
@@ -57,6 +61,7 @@ export function Player(): HTMLElement {
         <i class="fas fa-rotate-right"></i> Retry
       </button>
     </div>
+    <div id="guideDrawer" class="guide-drawer"></div>
     <video id="videoPlayer" controls></video>
   `;
 

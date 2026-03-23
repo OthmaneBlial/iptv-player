@@ -14,6 +14,7 @@ import {
   setDefaultPlaylist,
   updateChannelDiscoveryFilters,
 } from "./playlist";
+import { loadEpgFile, loadEpgFromUrl } from "./epg";
 import { clearHistory } from "./history"; // Import the clearHistory function
 
 export function setupEventListeners(): void {
@@ -30,6 +31,9 @@ export function setupEventListeners(): void {
   const loadRawPlaylistBtn = document.getElementById(
     "loadRawPlaylist"
   ) as HTMLElement;
+  const epgUrlInput = document.getElementById("epgUrl") as HTMLInputElement;
+  const loadEpgUrlBtn = document.getElementById("loadEpgUrl") as HTMLElement;
+  const epgFileInput = document.getElementById("epgFile") as HTMLInputElement;
   const playlistDropZone = document.getElementById(
     "playlistDropZone"
   ) as HTMLElement;
@@ -146,6 +150,35 @@ export function setupEventListeners(): void {
         url: "pasted-playlist",
       });
     } catch (error) {
+      console.error(error);
+    }
+  });
+
+  loadEpgUrlBtn.addEventListener("click", async () => {
+    const url = epgUrlInput.value.trim();
+    if (!url) {
+      alert("Enter an XMLTV URL before loading the EPG.");
+      return;
+    }
+
+    try {
+      await loadEpgFromUrl(url);
+    } catch (error) {
+      console.error(error);
+    }
+  });
+
+  epgFileInput.addEventListener("change", async () => {
+    const [file] = epgFileInput.files || [];
+    if (!file) {
+      return;
+    }
+
+    try {
+      await loadEpgFile(file);
+      epgFileInput.value = "";
+    } catch (error) {
+      alert("Could not import the EPG file.");
       console.error(error);
     }
   });

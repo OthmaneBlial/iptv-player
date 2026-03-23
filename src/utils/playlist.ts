@@ -8,6 +8,7 @@ import {
   createCollectionItemElement,
   renderEmptyCollectionState,
 } from "./collections";
+import { getGuideSearchText } from "./epg";
 import {
   getFavorites,
   isPinned,
@@ -315,7 +316,8 @@ function getFilteredChannels(): Channel[] {
       getFuzzyScore(channel.displayName, normalizedQuery) >= 0 ||
       getFuzzyScore(channel.group, normalizedQuery) >= 0 ||
       getFuzzyScore(channel.country, normalizedQuery) >= 0 ||
-      getFuzzyScore(channel.language, normalizedQuery) >= 0
+      getFuzzyScore(channel.language, normalizedQuery) >= 0 ||
+      getFuzzyScore(getGuideSearchText(channel.url), normalizedQuery) >= 0
     );
   });
 
@@ -329,13 +331,15 @@ function getFilteredChannels(): Channel[] {
       getFuzzyScore(left.displayName, normalizedQuery),
       getFuzzyScore(left.group, normalizedQuery),
       getFuzzyScore(left.country, normalizedQuery),
-      getFuzzyScore(left.language, normalizedQuery)
+      getFuzzyScore(left.language, normalizedQuery),
+      getFuzzyScore(getGuideSearchText(left.url), normalizedQuery)
     );
     const rightScore = Math.max(
       getFuzzyScore(right.displayName, normalizedQuery),
       getFuzzyScore(right.group, normalizedQuery),
       getFuzzyScore(right.country, normalizedQuery),
-      getFuzzyScore(right.language, normalizedQuery)
+      getFuzzyScore(right.language, normalizedQuery),
+      getFuzzyScore(getGuideSearchText(right.url), normalizedQuery)
     );
     return rightScore - leftScore;
   });
