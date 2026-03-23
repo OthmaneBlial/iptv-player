@@ -87,6 +87,7 @@ export function displayFavorites(): void {
       const li = createCollectionItemElement({
         isFavorite: true,
         isPinned: favorite.pinned,
+        logoUrl: channel.logo,
         meta: channel.group,
         onPlay: () => {
           window.dispatchEvent(
@@ -130,6 +131,7 @@ function displayPinnedFavorites(): void {
     const li = createCollectionItemElement({
       isFavorite: true,
       isPinned: true,
+      logoUrl: channel.logo,
       meta: channel.group,
       onPlay: () => {
         window.dispatchEvent(

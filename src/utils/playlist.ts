@@ -23,6 +23,30 @@ import {
 let loadedChannels = 0;
 const CHANNELS_PER_LOAD = 50;
 let observer: IntersectionObserver | null = null;
+let filteredChannelsCache: Channel[] = [];
+let filteredChannelsCacheKey = "";
+
+async function parseM3UAsync(data: string, baseUrl = ""): Promise<Channel[]> {
+  if (typeof Worker === "undefined" || data.length < 50000) {
+    return parseM3U(data, baseUrl);
+  }
+
+  return new Promise((resolve, reject) => {
+    const worker = new Worker("./workers/playlist.worker.js");
+
+    worker.onmessage = (event: MessageEvent<{ channels: Channel[] }>) => {
+      worker.terminate();
+      resolve(event.data.channels);
+    };
+
+    worker.onerror = (error) => {
+      worker.terminate();
+      reject(error);
+    };
+
+    worker.postMessage({ baseUrl, data });
+  });
+}
 
 export async function fetchPlaylist(url: string): Promise<void> {
   try {
@@ -30,7 +54,7 @@ export async function fetchPlaylist(url: string): Promise<void> {
     const response = await fetch(url);
     if (!response.ok) throw new Error("Network response was not ok");
     const data = await response.text();
-    importPlaylistFromText(data, {
+    await importPlaylistFromText(data, {
       sourceLabel: url,
       sourceType: "url",
       url,
@@ -49,7 +73,7 @@ export async function loadPlaylistFile(file: File): Promise<void> {
   try {
     setPlaylistFeedback(`Loading ${file.name}...`, "neutral");
     const text = await file.text();
-    importPlaylistFromText(text, {
+    await importPlaylistFromText(text, {
       sourceLabel: file.name,
       sourceType: "file",
       url: file.name,
@@ -60,15 +84,15 @@ export async function loadPlaylistFile(file: File): Promise<void> {
   }
 }
 
-export function importPlaylistFromText(
+export async function importPlaylistFromText(
   data: string,
   options: {
     sourceLabel: string;
     sourceType: PlaylistRecord["sourceType"];
     url: string;
   }
-): void {
-  const channels = parseM3U(data, options.url);
+): Promise<void> {
+  const channels = await parseM3UAsync(data, options.url);
   if (!channels.length) {
     setPlaylistFeedback(
       "No playable channels were found in the playlist content.",
@@ -211,6 +235,7 @@ export function displayChannels(): void {
     const li = createCollectionItemElement({
       isFavorite: getFavorites().includes(channel.url),
       isPinned: isPinned(channel.url),
+      logoUrl: channel.logo,
       meta: createChannelMeta(channel),
       onPlay: () => {
         window.dispatchEvent(
@@ -317,6 +342,19 @@ export function playAdjacentChannel(direction: -1 | 1): void {
 function getFilteredChannels(): Channel[] {
   const { filters } = appStore.getState();
   const channels = getActivePlaylist()?.channels || [];
+  const cacheKey = JSON.stringify({
+    activePlaylistId: getActivePlaylist()?.id || "none",
+    epgLoadedAt: appStore.getState().epg.loadedAt,
+    favorites: appStore.getState().favorites
+      .map((favorite) => `${favorite.url}:${favorite.pinned}`)
+      .join("|"),
+    filters,
+    history: appStore.getState().history.map((item) => item.url).join("|"),
+  });
+  if (cacheKey === filteredChannelsCacheKey) {
+    return filteredChannelsCache;
+  }
+
   const normalizedQuery = filters.query.toLowerCase();
 
   const filtered = channels.filter((channel) => {
@@ -344,10 +382,12 @@ function getFilteredChannels(): Channel[] {
 
   const sorted = sortChannels(filtered);
   if (!normalizedQuery) {
-    return sorted;
+    filteredChannelsCache = sorted;
+    filteredChannelsCacheKey = cacheKey;
+    return filteredChannelsCache;
   }
 
-  return sorted.sort((left, right) => {
+  filteredChannelsCache = sorted.sort((left, right) => {
     const leftScore = Math.max(
       getFuzzyScore(left.displayName, normalizedQuery),
       getFuzzyScore(left.group, normalizedQuery),
@@ -364,6 +404,8 @@ function getFilteredChannels(): Channel[] {
     );
     return rightScore - leftScore;
   });
+  filteredChannelsCacheKey = cacheKey;
+  return filteredChannelsCache;
 }
 
 function createPlaylistRecord(
@@ -389,6 +431,8 @@ function createPlaylistRecord(
 export function renderPlaylistState(): void {
   renderPlaylistLibrary();
   renderDiscoveryControls();
+  filteredChannelsCache = [];
+  filteredChannelsCacheKey = "";
   loadedChannels = 0;
   clearChannels();
   displayChannels();

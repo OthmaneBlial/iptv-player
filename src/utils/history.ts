@@ -5,6 +5,7 @@ import {
   renderEmptyCollectionState,
 } from "./collections";
 import { isPinned, toggleFavorite, togglePinned } from "./favorites";
+import { findChannelByUrl } from "./playlist";
 import { setStoredHistory } from "./storage";
 
 export function addToHistory(channelName: string, url: string): void {
@@ -39,9 +40,11 @@ export function displayHistory(): void {
   }
 
   appStore.getState().history.forEach((item: HistoryItem) => {
+    const channel = findChannelByUrl(item.url);
     const li = createCollectionItemElement({
       isFavorite: appStore.getState().favorites.some((favorite) => favorite.url === item.url),
       isPinned: isPinned(item.url),
+      logoUrl: channel?.logo,
       onPlay: () => {
         window.dispatchEvent(
           new CustomEvent("app:play-channel", {

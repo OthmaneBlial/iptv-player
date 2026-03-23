@@ -18,6 +18,7 @@ import { loadEpgFile, loadEpgFromUrl } from "./epg";
 import { clearHistory } from "./history"; // Import the clearHistory function
 
 export function setupEventListeners(): void {
+  let searchDebounceTimer = 0;
   const importBtn = document.getElementById("importPlaylist") as HTMLElement;
   const playlistUrlInput = document.getElementById(
     "playlistUrl"
@@ -79,7 +80,10 @@ export function setupEventListeners(): void {
 
   searchChannelsInput.addEventListener("input", (e) => {
     const query = (e.target as HTMLInputElement).value.trim().toLowerCase();
-    filterChannels(query);
+    window.clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = window.setTimeout(() => {
+      filterChannels(query);
+    }, 120);
   });
 
   channelGroupFilter.addEventListener("change", (event) => {
@@ -144,7 +148,7 @@ export function setupEventListeners(): void {
     }
 
     try {
-      importPlaylistFromText(text, {
+      void importPlaylistFromText(text, {
         sourceLabel: "pasted playlist",
         sourceType: "text",
         url: "pasted-playlist",

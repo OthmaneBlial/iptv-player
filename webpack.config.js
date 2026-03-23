@@ -66,6 +66,10 @@ module.exports = {
           from: "src/assets",
           to: "assets",
         },
+        {
+          from: "src/workers",
+          to: "workers",
+        },
       ],
     }),
   ],

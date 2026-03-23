@@ -1,6 +1,7 @@
 interface CollectionItemConfig {
   isFavorite: boolean;
   isPinned: boolean;
+  logoUrl?: string;
   meta?: string;
   onPlay: () => void;
   onRemove?: () => void;
@@ -20,7 +21,11 @@ function formatTimestamp(timestamp?: string): string {
   return `Last watched ${date.toLocaleString()}`;
 }
 
-function createLogoMarkup(title: string): string {
+function createLogoMarkup(title: string, logoUrl?: string): string {
+  if (logoUrl) {
+    return `<img class="channel-logo" src="${logoUrl}" alt="${title} logo" loading="lazy" />`;
+  }
+
   return `<span class="channel-logo-placeholder">${title
     .slice(0, 1)
     .toUpperCase()}</span>`;
@@ -33,7 +38,7 @@ export function createCollectionItemElement(
   li.className = "channel-item collection-item";
   li.innerHTML = `
     <div class="channel-info">
-      ${createLogoMarkup(config.title)}
+      ${createLogoMarkup(config.title, config.logoUrl)}
       <div class="channel-copy">
         <span class="channel-name">${config.title}</span>
         <span class="channel-meta">${
