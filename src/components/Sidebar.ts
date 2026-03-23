@@ -50,6 +50,22 @@ export function Sidebar(): HTMLElement {
           Import XMLTV data to see now/next programming and schedule details.
         </p>
       </div>
+      <div class="import-block">
+        <label for="syncToken">Cloud Sync</label>
+        <input type="password" id="syncToken" placeholder="GitHub token for private gist sync" aria-label="GitHub token for cloud sync" />
+        <input type="text" id="syncGistId" placeholder="Existing gist ID or leave empty to create one" aria-label="GitHub gist identifier" />
+        <div class="import-row import-row--compact">
+          <button id="pushCloudSync">
+            <i class="fas fa-cloud-arrow-up"></i> Push Sync
+          </button>
+          <button id="pullCloudSync">
+            <i class="fas fa-cloud-arrow-down"></i> Pull Sync
+          </button>
+        </div>
+        <p id="syncFeedback" class="playlist-feedback" data-tone="neutral" role="status" aria-live="polite">
+          Local-first mode is active. Add a GitHub token to sync through a private gist.
+        </p>
+      </div>
     </div>
     <div class="playlist-library-panel">
       <div class="playlist-library-header">
