@@ -71,6 +71,7 @@ export function getStoredFavorites(): FavoriteRecord[] {
     localStorage.getItem("favorites"),
     parseJSON<string[]>(localStorage.getItem("favorites"), []).map((url) => ({
       addedAt: new Date().toISOString(),
+      pinned: false,
       url,
     }))
   );

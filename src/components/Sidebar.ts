@@ -88,6 +88,14 @@ export function Sidebar(): HTMLElement {
       </div>
       <!-- Favorites Section -->
       <div class="section">
+        <div class="list-title" data-target="pinnedList">
+          Pinned <i class="fas fa-chevron-down"></i>
+        </div>
+        <ul class="favorites-list collapsed" id="pinnedList">
+          <!-- Pinned channels will be populated here -->
+        </ul>
+      </div>
+      <div class="section">
         <div class="list-title" data-target="favoritesList">
           Favorites <i class="fas fa-chevron-down"></i>
         </div>

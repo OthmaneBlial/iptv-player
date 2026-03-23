@@ -1,6 +1,10 @@
 import { appStore } from "../store/appStore";
 import { HistoryItem } from "../types/models";
-import { toggleFavorite } from "./favorites";
+import {
+  createCollectionItemElement,
+  renderEmptyCollectionState,
+} from "./collections";
+import { isPinned, toggleFavorite, togglePinned } from "./favorites";
 import { setStoredHistory } from "./storage";
 
 export function addToHistory(channelName: string, url: string): void {
@@ -29,36 +33,28 @@ export function displayHistory(): void {
   }
 
   historyList.innerHTML = "";
+  if (!appStore.getState().history.length) {
+    renderEmptyCollectionState(historyList, "Your watch history will appear here.");
+    return;
+  }
+
   appStore.getState().history.forEach((item: HistoryItem) => {
-    const li = document.createElement("li");
-    li.classList.add("history-item");
-    li.innerHTML = `
-      <span class="favorite" data-url="${item.url}">
-        <i class="far fa-heart"></i>
-      </span>
-      <span class="history-time">${new Date(
-        item.timestamp
-      ).toLocaleString()}</span>
-      <div class="channel-info">
-        <span class="channel-name">${item.name}</span>
-      </div>
-    `;
-    li.addEventListener("click", (e) => {
-      if (
-        (e.target as HTMLElement).classList.contains("favorite") ||
-        (e.target as HTMLElement).parentElement?.classList.contains("favorite")
-      )
-        return;
-      window.dispatchEvent(
-        new CustomEvent("app:play-channel", {
-          detail: { name: item.name, url: item.url },
-        })
-      );
-    });
-    const favoriteBtn = li.querySelector(".favorite") as HTMLElement;
-    favoriteBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      toggleFavorite(item.url);
+    const li = createCollectionItemElement({
+      isFavorite: appStore.getState().favorites.some((favorite) => favorite.url === item.url),
+      isPinned: isPinned(item.url),
+      onPlay: () => {
+        window.dispatchEvent(
+          new CustomEvent("app:play-channel", {
+            detail: { name: item.name, url: item.url },
+          })
+        );
+      },
+      onRemove: () => removeHistoryItem(item.url),
+      onToggleFavorite: () => toggleFavorite(item.url),
+      onTogglePinned: () => togglePinned(item.url),
+      timestamp: item.timestamp,
+      title: item.name,
+      url: item.url,
     });
     historyList.appendChild(li);
   });
@@ -68,5 +64,14 @@ export function displayHistory(): void {
 export function clearHistory(): void {
   appStore.setHistory([]);
   setStoredHistory([]);
+  displayHistory();
+}
+
+function removeHistoryItem(url: string): void {
+  const nextHistory = appStore
+    .getState()
+    .history.filter((item) => item.url !== url);
+  appStore.setHistory(nextHistory);
+  setStoredHistory(nextHistory);
   displayHistory();
 }

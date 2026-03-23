@@ -59,7 +59,12 @@ function normalizeHistory(history: HistoryItem[]): HistoryItem[] {
 }
 
 function normalizeFavorites(favorites: FavoriteRecord[]): FavoriteRecord[] {
-  return favorites.filter((item) => Boolean(item.url));
+  return favorites
+    .filter((item) => Boolean(item.url))
+    .map((item) => ({
+      ...item,
+      pinned: Boolean(item.pinned),
+    }));
 }
 
 function normalizePlayerPreferences(

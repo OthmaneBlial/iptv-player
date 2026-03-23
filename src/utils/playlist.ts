@@ -4,7 +4,16 @@ import {
   PlaylistLibrarySnapshot,
   PlaylistRecord,
 } from "../types/models";
-import { getFavorites, toggleFavorite } from "./favorites";
+import {
+  createCollectionItemElement,
+  renderEmptyCollectionState,
+} from "./collections";
+import {
+  getFavorites,
+  isPinned,
+  toggleFavorite,
+  togglePinned,
+} from "./favorites";
 import {
   setStoredPlaylist,
   setStoredPlaylistLibrary,
@@ -186,7 +195,7 @@ export function displayChannels(): void {
 
   const filteredChannels = getFilteredChannels();
   if (!filteredChannels.length) {
-    renderEmptyChannelsState(channelsList);
+    renderEmptyCollectionState(channelsList, "No channels match the current filters.");
     updateChannelCount();
     return;
   }
@@ -198,44 +207,22 @@ export function displayChannels(): void {
   );
   for (let i = loadedChannels; i < end; i++) {
     const channel = filteredChannels[i];
-    const li = document.createElement("li");
-    li.classList.add("channel-item");
-    li.innerHTML = `
-      <span class="favorite" data-url="${channel.url}">
-        <i class="${
-          getFavorites().includes(channel.url) ? "fas fa-heart" : "far fa-heart"
-        }"></i>
-      </span>
-      <div class="channel-info">
-        ${createChannelLogoMarkup(channel)}
-        <div class="channel-copy">
-          <span class="channel-name">${channel.displayName}</span>
-          <span class="channel-meta">${createChannelMeta(channel)}</span>
-        </div>
-      </div>
-    `;
-
-    // Event listener for playing the channel
-    li.addEventListener("click", (e) => {
-      if (
-        (e.target as HTMLElement).classList.contains("favorite") ||
-        (e.target as HTMLElement).parentElement?.classList.contains("favorite")
-      )
-        return;
-      window.dispatchEvent(
-        new CustomEvent("app:play-channel", {
-          detail: { name: channel.displayName, url: channel.url },
-        })
-      );
+    const li = createCollectionItemElement({
+      isFavorite: getFavorites().includes(channel.url),
+      isPinned: isPinned(channel.url),
+      meta: createChannelMeta(channel),
+      onPlay: () => {
+        window.dispatchEvent(
+          new CustomEvent("app:play-channel", {
+            detail: { name: channel.displayName, url: channel.url },
+          })
+        );
+      },
+      onToggleFavorite: () => toggleFavorite(channel.url),
+      onTogglePinned: () => togglePinned(channel.url),
+      title: channel.displayName,
+      url: channel.url,
     });
-
-    // Event listener for favorite button
-    const favoriteBtn = li.querySelector(".favorite") as HTMLElement;
-    favoriteBtn.addEventListener("click", (e) => {
-      e.stopPropagation(); // Prevent triggering the channel play
-      toggleFavorite(channel.url);
-    });
-
     fragment.appendChild(li);
   }
   channelsList.appendChild(fragment);
@@ -580,12 +567,6 @@ function createChannelLogoMarkup(channel: Channel): string {
     .toUpperCase()}</span>`;
 }
 
-function renderEmptyChannelsState(channelsList: HTMLElement): void {
-  const li = document.createElement("li");
-  li.className = "channel-item channel-empty-state";
-  li.textContent = "No channels match the current filters.";
-  channelsList.appendChild(li);
-}
 
 function getActivePlaylist(): PlaylistRecord | null {
   const { activePlaylistId, defaultPlaylistId, playlists } = appStore.getState();

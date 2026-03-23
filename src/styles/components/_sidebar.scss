@@ -469,6 +469,28 @@ aside {
           text-align: center;
           color: rgba(255, 255, 255, 0.72);
         }
+
+        &.collection-item {
+          justify-content: space-between;
+        }
+
+        .collection-actions {
+          display: flex;
+          gap: 0.3rem;
+          align-items: center;
+        }
+
+        .collection-action {
+          width: 34px;
+          height: 34px;
+          border: none;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.06);
+          color: var(--text-color);
+          display: grid;
+          place-items: center;
+          cursor: pointer;
+        }
       }
 
       // Custom Scrollbar Styles

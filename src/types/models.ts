@@ -30,6 +30,7 @@ export interface PlaylistLibrarySnapshot {
 export interface FavoriteRecord {
   url: string;
   addedAt: string;
+  pinned: boolean;
 }
 
 export interface HistoryItem {
