@@ -214,6 +214,19 @@ export function setupEventListeners(): void {
     });
   });
 
+  playlistDropZone.addEventListener("click", () => {
+    playlistFileInput.click();
+  });
+
+  playlistDropZone.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+
+    event.preventDefault();
+    playlistFileInput.click();
+  });
+
   playlistDropZone.addEventListener("drop", async (event) => {
     event.preventDefault();
     playlistDropZone.classList.remove("is-active");
@@ -318,46 +331,6 @@ export function setupEventListeners(): void {
     if (confirm("Are you sure you want to clear your history?")) {
       clearHistory();
     }
-  });
-
-  // Collapsible Sections with Accordion Behavior
-  const listTitles = document.querySelectorAll(
-    ".list-title"
-  ) as NodeListOf<HTMLElement>;
-
-  listTitles.forEach((title) => {
-    title.addEventListener("click", () => {
-      const targetId = title.getAttribute("data-target") || "";
-      const targetList = document.getElementById(targetId) as HTMLElement;
-      const icon = title.querySelector("i") as HTMLElement;
-
-      const isCollapsed = targetList.classList.contains("collapsed");
-
-      // Collapse all sections
-      listTitles.forEach((t) => {
-        const tId = t.getAttribute("data-target") || "";
-        const tList = document.getElementById(tId) as HTMLElement;
-        const tIcon = t.querySelector("i") as HTMLElement;
-
-        tList.classList.add("collapsed");
-        t.setAttribute("aria-expanded", "false");
-        tIcon.classList.remove("fa-chevron-up");
-        tIcon.classList.add("fa-chevron-down");
-      });
-
-      // Toggle current section
-      if (isCollapsed) {
-        targetList.classList.remove("collapsed");
-        title.setAttribute("aria-expanded", "true");
-        icon.classList.remove("fa-chevron-down");
-        icon.classList.add("fa-chevron-up");
-      } else {
-        targetList.classList.add("collapsed");
-        title.setAttribute("aria-expanded", "false");
-        icon.classList.remove("fa-chevron-up");
-        icon.classList.add("fa-chevron-down");
-      }
-    });
   });
 
   window.addEventListener("app:source-health-updated", () => {

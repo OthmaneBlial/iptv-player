@@ -25,8 +25,9 @@ describe("app startup", () => {
       document.dispatchEvent(new Event("DOMContentLoaded"));
     });
 
-    expect(document.getElementById("header")).not.toBeNull();
+    expect(document.querySelector(".main-container")).not.toBeNull();
     expect(document.getElementById("sidebar")).not.toBeNull();
     expect(document.getElementById("videoPlayer")).not.toBeNull();
+    expect(document.getElementById("toggleTheme")).not.toBeNull();
   });
 });

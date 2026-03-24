@@ -1,36 +1,36 @@
 :root {
-  --bg-color: #07111d;
-  --text-color: #f4f2ed;
-  --accent-color: #ffb454;
-  --accent-secondary: #8ad7cb;
+  --bg-color: #06121a;
+  --text-color: #f0f7f8;
+  --accent-color: #22c55e;
+  --accent-secondary: #7dd3fc;
   --header-height: auto;
-  --sidebar-width: 380px;
+  --sidebar-width: 360px;
   --transition-speed: 0.2s;
-  --card-bg: rgba(10, 19, 33, 0.9);
-  --card-hover: rgba(16, 29, 49, 0.96);
-  --light-bg: #f6efe5;
-  --light-text: #121212;
-  --input-bg: rgba(245, 248, 255, 0.07);
-  --input-text: #f4f2ed;
-  --button-bg: #ff9c52;
-  --button-hover-bg: #ffba72;
-  --button-text: #221206;
-  --section-title-color: #8ad7cb;
-  --panel-border: rgba(160, 181, 216, 0.14);
-  --panel-shadow: 0 28px 80px rgba(3, 8, 17, 0.42);
+  --card-bg: rgba(7, 16, 24, 0.9);
+  --card-hover: rgba(14, 26, 36, 0.96);
+  --light-bg: #f4f2ea;
+  --light-text: #182027;
+  --input-bg: rgba(240, 247, 248, 0.07);
+  --input-text: #f0f7f8;
+  --button-bg: #22c55e;
+  --button-hover-bg: #34d399;
+  --button-text: #04130b;
+  --section-title-color: #7dd3fc;
+  --panel-border: rgba(148, 163, 184, 0.16);
+  --panel-shadow: 0 30px 80px rgba(1, 8, 12, 0.44);
 }
 
 [data-theme="light"] {
-  --bg-color: #f6efe5;
-  --text-color: #201812;
-  --card-bg: rgba(255, 255, 255, 0.84);
-  --card-hover: rgba(255, 247, 238, 0.98);
-  --input-bg: rgba(29, 39, 57, 0.06);
-  --input-text: #121212;
-  --button-bg: #e7873d;
-  --button-hover-bg: #f3a45f;
-  --button-text: #fff8f2;
-  --section-title-color: #176d63;
-  --panel-border: rgba(29, 39, 57, 0.08);
-  --panel-shadow: 0 26px 72px rgba(34, 28, 22, 0.1);
+  --bg-color: #f4f2ea;
+  --text-color: #162027;
+  --card-bg: rgba(255, 255, 255, 0.88);
+  --card-hover: rgba(255, 255, 255, 1);
+  --input-bg: rgba(22, 32, 39, 0.06);
+  --input-text: #162027;
+  --button-bg: #188f47;
+  --button-hover-bg: #22a657;
+  --button-text: #f8fffb;
+  --section-title-color: #17607f;
+  --panel-border: rgba(22, 32, 39, 0.1);
+  --panel-shadow: 0 24px 72px rgba(22, 32, 39, 0.1);
 }

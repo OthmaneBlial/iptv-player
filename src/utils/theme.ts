@@ -17,9 +17,9 @@ export function initializeTheme(): void {
     }
 
     if (theme === "light") {
-      toggleThemeBtn.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+      toggleThemeBtn.innerHTML = '<i class="fas fa-sun"></i> Light';
     } else {
-      toggleThemeBtn.innerHTML = '<i class="fas fa-moon"></i> Dark Mode';
+      toggleThemeBtn.innerHTML = '<i class="fas fa-moon"></i> Dark';
     }
   };
 

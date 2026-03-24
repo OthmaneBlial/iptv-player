@@ -1,5 +1,4 @@
 import "./styles/main.scss";
-import { Header } from "./components/Header";
 import { Player } from "./components/Player";
 import { Sidebar } from "./components/Sidebar";
 import { bootstrapAppState } from "./services/bootstrap";
@@ -24,9 +23,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!appRoot) {
     throw new Error("App root element not found.");
   }
-
-  const header = Header();
-  appRoot.appendChild(header);
 
   const main = document.createElement("main");
   main.classList.add("main-container");
