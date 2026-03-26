@@ -7,6 +7,7 @@ import {
   getProxyAwareUrl,
   isIgnorablePlaybackError,
   isStreamProxyEnabled,
+  normalizePlayableUrl,
 } from "../utils/network";
 import {
   markSourcePlaybackFailure,
@@ -311,6 +312,10 @@ function startPlayback(
   console.log('[PLAYER] HLS supported:', Hls.isSupported());
   console.log('[PLAYER] Video element:', video);
   console.log('[PLAYER] Stream URL:', currentChannel.url);
+  const playbackUrl = normalizePlayableUrl(currentChannel.url);
+  if (playbackUrl !== currentChannel.url) {
+    console.log("[PLAYER] Normalized stream URL for playback:", playbackUrl);
+  }
 
   if (Hls.isSupported()) {
     hls = new Hls({
@@ -323,9 +328,9 @@ function startPlayback(
         }
       },
     });
-    hls.loadSource(currentChannel.url);
+    hls.loadSource(playbackUrl);
     hls.attachMedia(video);
-    console.log('[PLAYER HLS] Loading source:', currentChannel.url);
+    console.log('[PLAYER HLS] Loading source:', playbackUrl);
     hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
       console.log('[PLAYER HLS] Manifest parsed:', data);
       requestVideoPlayback(currentPlaybackSessionId);
@@ -392,7 +397,7 @@ function startPlayback(
       handlePlaybackRetry(errorMessage);
     });
   } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-    video.src = currentChannel.url;
+    video.src = getProxyAwareUrl(playbackUrl);
     appStore.setPlayer({
       audioTracks: [
         {

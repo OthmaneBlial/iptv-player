@@ -5,6 +5,7 @@ import {
   SourceHealthStatus,
 } from "../types/models";
 import { logDiagnostic } from "./diagnostics";
+import { getProxyAwareUrl } from "./network";
 import { isGroupBlockedForProfile } from "./profiles";
 import { setStoredSourceHealth } from "./storage";
 
@@ -160,16 +161,15 @@ async function probeSource(url: string): Promise<{
   const startedAt = performance.now();
 
   try {
-    await fetch(url, {
+    const response = await fetch(getProxyAwareUrl(url), {
       cache: "no-store",
       method: "HEAD",
-      mode: "no-cors",
       signal: controller.signal,
     });
 
     return {
       latencyMs: Math.round(performance.now() - startedAt),
-      ok: true,
+      ok: response.ok,
     };
   } catch (error) {
     return {

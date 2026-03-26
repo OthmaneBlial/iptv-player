@@ -194,31 +194,33 @@ export function Sidebar(): HTMLElement {
 
                 <div class="settings-field">
                   <label>Cloud Sync</label>
-                  <div class="input-row">
-                    <input
-                      type="password"
-                      id="syncToken"
-                      placeholder="GitHub token"
-                      aria-label="GitHub token"
-                      autocomplete="current-password"
-                    />
-                  </div>
-                  <div class="input-row">
-                    <input
-                      type="text"
-                      id="syncGistId"
-                      placeholder="Gist ID (optional)"
-                      aria-label="Gist ID"
-                    />
-                  </div>
-                  <div class="settings-actions">
-                    <button id="pushCloudSync" class="btn-secondary">
-                      <i class="fas fa-cloud-arrow-up"></i> Push
-                    </button>
-                    <button id="pullCloudSync" class="btn-secondary">
-                      <i class="fas fa-cloud-arrow-down"></i> Pull
-                    </button>
-                  </div>
+                  <form class="sync-form" id="syncForm" autocomplete="on">
+                    <div class="input-row">
+                      <input
+                        type="password"
+                        id="syncToken"
+                        placeholder="GitHub token"
+                        aria-label="GitHub token"
+                        autocomplete="current-password"
+                      />
+                    </div>
+                    <div class="input-row">
+                      <input
+                        type="text"
+                        id="syncGistId"
+                        placeholder="Gist ID (optional)"
+                        aria-label="Gist ID"
+                      />
+                    </div>
+                    <div class="settings-actions">
+                      <button id="pushCloudSync" class="btn-secondary" type="button">
+                        <i class="fas fa-cloud-arrow-up"></i> Push
+                      </button>
+                      <button id="pullCloudSync" class="btn-secondary" type="button">
+                        <i class="fas fa-cloud-arrow-down"></i> Pull
+                      </button>
+                    </div>
+                  </form>
                   <p id="syncFeedback" class="feedback" role="status"></p>
                 </div>
               </section>

@@ -51,7 +51,9 @@ describe("player playback wiring", () => {
       );
 
       expect(appStore.getState().player.currentChannel?.name).toBe("Test Channel");
-      expect(video.src).toBe("https://example.com/live.m3u8");
+      expect(video.src).toBe(
+        "http://localhost/api/stream?url=https%3A%2F%2Fexample.com%2Flive.m3u8"
+      );
       expect(playMock).toHaveBeenCalled();
     });
   });

@@ -1,3 +1,5 @@
+importScripts("./hlsManifestProxy.js");
+
 const CACHE_NAME = "broadcast-console-shell-v1";
 const APP_SHELL = [
   "./",
@@ -5,6 +7,7 @@ const APP_SHELL = [
   "./bundle.js",
   "./manifest.webmanifest",
   "./assets/icon.svg",
+  "./hlsManifestProxy.js",
 ];
 
 self.addEventListener("install", (event) => {
@@ -110,6 +113,22 @@ async function handleStreamProxy(request) {
     headers.delete("content-length");
     headers.delete("Content-Security-Policy");
     headers.delete("X-Frame-Options");
+
+    if (self.hlsManifestProxy?.isLikelyHlsManifest(streamUrl, response.headers.get("content-type"))) {
+      const manifestText = await response.text();
+      const rewrittenManifest = self.hlsManifestProxy.rewriteManifestForProxy(
+        manifestText,
+        streamUrl,
+        self.location.origin,
+        "/api/stream"
+      );
+
+      return new Response(rewrittenManifest, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+      });
+    }
 
     return new Response(response.body, {
       status: response.status,

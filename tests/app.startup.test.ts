@@ -31,6 +31,7 @@ describe("app startup", () => {
     expect(document.getElementById("toggleTheme")).not.toBeNull();
     expect(document.getElementById("playlistPreset")).not.toBeNull();
     expect(document.getElementById("loadPlaylistPreset")).not.toBeNull();
+    expect(document.getElementById("syncToken")?.closest("form")).not.toBeNull();
     expect(document.getElementById("guidePanel")?.hasAttribute("hidden")).toBe(true);
   });
 });

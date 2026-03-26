@@ -5,6 +5,10 @@ const { pipeline } = require("stream/promises");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
+const {
+  isLikelyHlsManifest,
+  rewriteManifestForProxy,
+} = require("./src/utils/hlsManifestProxy");
 
 const requestedPort = Number(process.env.PORT);
 const devServerPort =
@@ -75,6 +79,21 @@ function createStreamProxyMiddleware() {
 
       if (!upstreamResponse.body || request.method === "HEAD") {
         response.end();
+        return;
+      }
+
+      const upstreamContentType = upstreamResponse.headers.get("content-type");
+      if (isLikelyHlsManifest(targetUrl, upstreamContentType)) {
+        const manifestText = await upstreamResponse.text();
+        const proxyOrigin = `http://${request.headers.host || "localhost"}`;
+        const rewrittenManifest = rewriteManifestForProxy(
+          manifestText,
+          targetUrl,
+          proxyOrigin,
+          STREAM_PROXY_PATH
+        );
+        response.setHeader("Content-Type", upstreamContentType || "application/vnd.apple.mpegurl");
+        response.end(rewrittenManifest);
         return;
       }
 
@@ -198,6 +217,10 @@ module.exports = (_, argv = {}) => {
           {
             from: "src/workers",
             to: "workers",
+          },
+          {
+            from: "src/utils/hlsManifestProxy.js",
+            to: "hlsManifestProxy.js",
           },
           {
             from: "iptv-wasm/pkg",
