@@ -1,219 +1,159 @@
-# Broadcast Console
+# Streamflow
 
-Broadcast Console is a polished IPTV workspace for loading playlists, watching HLS streams, managing favorites and history, importing guide data, validating source health, and building a more personalized viewing setup with profiles and multiview.
+Streamflow is a modern IPTV workspace built with TypeScript, Sass, HLS.js, and Rust/WASM. It is designed for loading large playlists quickly, browsing channels with useful filters, and playing HLS streams in a UI that makes playback state obvious.
 
-It started as a small IPTV player and is now closer to a real product:
+## What It Does
 
-- multi-playlist library with backup import/export
-- fuzzy channel discovery with country, language, group, favorite, recent, and health-aware sorting
-- HLS playback with retries, quality selection, audio-track selection, and diagnostics
-- favorites, pinned channels, watch history, and resume flow
-- XMLTV EPG import with now/next guide surfaces
-- source health checks and manual stream reporting
-- profile-aware restrictions with parental unlock
-- quick-switch, mini-player, and multiview previews
-- installable PWA, optional cloud sync, CI, and Docker deployment
+- Load playlists from URL, local file, raw text, or built-in quick-source presets
+- Parse playlists with a Rust/WASM engine and fall back to JavaScript when needed
+- Play HLS streams with retries, status badges, quality selection, audio-track selection, volume, fullscreen, and picture-in-picture
+- Save multiple playlist libraries and switch between them without re-importing
+- Track favorites, pinned channels, watch history, and resume state
+- Import XMLTV guide data and show now/next program context
+- Scan stream health and collect manual source reports
+- Support profiles, restricted groups, multiview, quick switch, PWA install, and optional cloud sync
 
-## Preview
+## Tech Stack
 
-![Broadcast Console demo](demo.png)
+- Frontend: TypeScript, Sass, Webpack
+- Playback: HLS.js
+- Performance layer: Rust + WebAssembly via `wasm-pack`
+- Storage: localStorage + IndexedDB
+- Delivery: static build, Docker, or installable PWA
 
-## Quick Start
+## Requirements
 
-### Requirements
-
-- Node.js 20+ recommended
+- Node.js 20+
 - npm
+- Rust toolchain
+- `wasm-pack`
+- Rust target `wasm32-unknown-unknown`
 
-### Install
+Install the Rust/WASM tooling once:
 
 ```bash
-git clone https://github.com/OthmaneBlial/iptv-player.git
+rustup target add wasm32-unknown-unknown
+cargo install wasm-pack --version 0.13.1 --locked
+```
+
+## Getting Started
+
+Clone and install dependencies:
+
+```bash
+git clone git@github.com:OthmaneBlial/iptv-player.git
 cd iptv-player
 npm ci
 ```
 
-### Start The App
+Start the development server:
 
 ```bash
 npm start
 ```
 
-Webpack Dev Server will build the app, launch the development server, and pick an available local port automatically. It will usually open your browser by itself.
+The dev server builds the WASM package first, then launches Webpack Dev Server. If the browser does not open automatically, use the URL printed in the terminal.
 
-If it does not open by itself, go to:
+## First Run
 
-```text
-check the terminal output for the exact local URL
-```
+1. Open the app.
+2. In `Quick Sources`, choose `Streamflow Demo`.
+3. Click `Load`.
+4. Pick a channel from the sidebar.
 
-If you want to force a specific port, run:
-
-```bash
-PORT=8081 npm start
-```
-
-### Load A Playlist
-
-After the app opens:
-
-1. Paste a playlist URL into the `Playlist URL` field.
-2. Or import a local `.m3u` / `.m3u8` file.
-3. Or paste raw playlist content directly.
-
-If you just want a quick public sample, try:
-
-```text
-https://iptv-org.github.io/iptv/index.m3u
-```
-
-## How To Run This Project
-
-### Development Mode
-
-Use this while building features:
-
-```bash
-npm start
-```
-
-What this does:
-
-- starts the webpack dev server
-- rebuilds when files change
-- serves the app locally for testing
-- uses a free port automatically unless you set `PORT` yourself
-
-### Run Tests
-
-```bash
-npm test -- --runInBand
-```
-
-This runs the Jest suite for store, playlist parsing, storage, and app startup behavior.
-
-### Production Build
-
-```bash
-npm run build
-```
-
-This creates the production bundle in `dist/`.
-
-### Run With Docker
-
-```bash
-docker build -t broadcast-console .
-docker run --rm -p 8080:80 broadcast-console
-```
-
-Then open:
-
-```text
-http://localhost:8080
-```
-
-## Feature Overview
-
-### Playlist And Discovery
-
-- import playlists from URL, file, or raw text
-- save multiple playlists and switch between them
-- rename, duplicate, delete, export, and restore playlist libraries
-- browse by group, country, language, recent, favorites, or source health
-
-### Playback And Viewing
-
-- HLS.js-based playback with retry handling
-- quality and audio-track controls
-- picture-in-picture and fullscreen support
-- mini-player layout for quick switching
-- multiview preview wall for 2-up or 4-up watching
-
-### Collections And Guide
-
-- favorites and pinned shortcuts
-- history with quick replay
-- resume last watched channel
-- XMLTV import for now/next and schedule context
-
-### Source Quality And Support
-
-- source health scan for active playlists
-- manual “works” and “issue” reporting
-- diagnostics export for troubleshooting
-- playback and runtime error logging
-
-### Personalization
-
-- built-in profiles
-- profile-aware blocked groups
-- PIN-based unlock for restricted groups
-- personalized “For You” recommendations
-- quick-switch suggestions built from current, recent, and favorite channels
-
-### Install And Sync
-
-- installable PWA flow
-- optional GitHub Gist cloud sync
-- Docker deployment
-- GitHub Actions CI
-
-## Profiles And Default PINs
-
-The app currently ships with three default local profiles:
-
-- `Owner`
-- `Family`
-- `Kids`
-
-Default PINs:
-
-- `Family`: `2468`
-- `Kids`: `1234`
-
-These are local defaults meant for development and demo usage. If you want different values, update the profile defaults in [`src/utils/profileDefaults.ts`](/home/othmane/Downloads/iptv-player/src/utils/profileDefaults.ts).
+You can also paste your own `.m3u` or `.m3u8` URL, import a local playlist file, or paste raw playlist content in Settings.
 
 ## Scripts
 
 ```bash
-npm start        # start webpack dev server
-npm run build    # create production bundle
-npm test         # run Jest
-npm run lint     # run ESLint
-npm run format   # run Prettier
+npm start              # build WASM and launch the dev server
+npm run build:wasm     # compile the Rust/WASM package
+npm run build          # production build
+npm run build:release  # release WASM build + production bundle
+npm test -- --runInBand
+npm run lint
+npm run format
 ```
 
-## Project Structure
+## Feature Overview
+
+### Playlist Workflow
+
+- Quick-source presets for fast testing
+- Remote URL import through a proxy-aware fetch path
+- Local file import for `.m3u` and `.m3u8`
+- Raw playlist paste support
+- Saved playlist library with rename, duplicate, delete, export, and restore
+
+### Playback
+
+- HLS playback with retry handling
+- Clear `standby`, `buffering`, `on air`, and `signal lost` states
+- Quality and audio-track controls
+- Volume, mute, fullscreen, picture-in-picture, and retry controls
+- Resume last channel
+
+### Discovery
+
+- Search with fuzzy matching
+- Group, country, language, recent, favorites, and health-aware sorting
+- Favorites and pinned channels
+- Watch history
+
+### Advanced Tools
+
+- XMLTV EPG import
+- Stream health scanning and reporting
+- Profile-aware restrictions
+- Quick switch and multiview
+- PWA support and optional cloud sync
+
+## Docker
+
+Build and run the production image:
+
+```bash
+docker build -t streamflow .
+docker run --rm -p 8080:80 streamflow
+```
+
+Then open `http://localhost:8080`.
+
+## CI and Releases
+
+- GitHub Actions runs the build and Jest suite on pushes to `main` and on pull requests
+- Pushing a tag that matches `v*` builds the production bundle and publishes a release artifact
+
+## Project Layout
 
 ```text
 src/
-  components/    UI building blocks
-  services/      player, header, multiview, bootstrap services
-  store/         central application state
-  styles/        Sass design system and component styles
-  utils/         playlist, favorites, history, EPG, sync, source health, profiles
-  workers/       playlist parsing worker
+  components/   UI components
+  services/     playback, bootstrap, header, PWA, multiview
+  store/        application state
+  styles/       Sass system and component styling
+  utils/        playlist, EPG, sync, storage, health, profiles, diagnostics
+  workers/      worker scripts
+iptv-wasm/
+  src/          Rust parser/filter implementation
+  src-js/       JS bridge helpers
 docs/
-  deployment.md  deployment notes
+  deployment.md deployment notes
+tests/
+  Jest coverage and browser automation helpers
 ```
-
-## Deployment
-
-For deployment details, read [`docs/deployment.md`](/home/othmane/Downloads/iptv-player/docs/deployment.md).
-
-Typical paths:
-
-- static hosting from `dist/`
-- Docker with Nginx
-- installable PWA
 
 ## Notes
 
-- Stream availability depends on the playlist source. Some channels may go offline or change without notice.
-- Browser CORS behavior can affect some remote playlist or stream checks.
-- Source health is best-effort and combines lightweight checks with real playback signals and manual feedback.
-- The production build currently emits webpack bundle-size warnings, but it builds successfully.
+- Public IPTV playlists are not stable. Some channels will be offline, geo-blocked, or codec-incompatible depending on the browser.
+- `npm run build` requires `wasm-pack` because the WASM package is rebuilt before bundling.
+- In development, service workers are disabled and cleaned up to avoid stale cached assets on `localhost`.
+
+## Documentation
+
+- [Deployment Guide](docs/deployment.md)
+- [Implementation Status](IMPLEMENTATION_STATUS.md)
+- [WASM Implementation Notes](WASM_IMPLEMENTATION.md)
 
 ## License
 
