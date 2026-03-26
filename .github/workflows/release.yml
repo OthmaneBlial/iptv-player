@@ -17,6 +17,13 @@ jobs:
           cache: npm
           node-version: 20
 
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --version 0.13.1 --locked
+
       - run: npm ci
       - run: npm run build
       - run: tar -czf broadcast-console-dist.tgz dist
