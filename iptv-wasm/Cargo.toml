@@ -1,0 +1,32 @@
+[package]
+name = "iptv-wasm"
+version = "0.1.0"
+edition = "2021"
+authors = ["Othmane BLIAL"]
+license = "MIT"
+description = "High-performance WASM backend for IPTV Player"
+repository = "https://github.com/othmaneblial/iptv-player"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+serde = { version = "1.0", features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+url = "2.5"
+regex = "1.10"
+console_error_panic_hook = "0.1"
+
+[dependencies.web-sys]
+version = "0.3"
+features = []
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-Oz", "--enable-mutable-globals"]

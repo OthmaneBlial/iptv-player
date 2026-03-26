@@ -17,6 +17,10 @@ import { renderPlaylistState } from "./utils/playlist";
 import { initializeProfiles } from "./utils/profiles";
 import { initializeSourceHealth } from "./utils/sourceHealth";
 import { initializeTheme } from "./utils/theme";
+import { initWasm } from "./utils/api";
+
+// Initialize WASM module early
+initWasm().catch(console.error);
 
 document.addEventListener("DOMContentLoaded", async () => {
   const appRoot = document.getElementById("app");

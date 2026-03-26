@@ -1,11 +1,14 @@
 {
   "name": "iptv-player",
   "version": "1.0.0",
-  "description": "A modern IPTV Player built with TypeScript, Sass, HLS.js, Babel, and Webpack.",
+  "description": "A modern IPTV Player built with TypeScript, Sass, HLS.js, Babel, Webpack, and Rust WASM.",
   "main": "dist/bundle.js",
   "scripts": {
-    "build": "webpack --mode production",
-    "start": "webpack serve --mode development --open",
+    "build:wasm": "cd iptv-wasm && wasm-pack build --target web --out-dir pkg",
+    "build:wasm:release": "cd iptv-wasm && wasm-pack build --release --target web --out-dir pkg",
+    "build": "npm run build:wasm && webpack --mode production",
+    "build:release": "npm run build:wasm:release && webpack --mode production",
+    "start": "npm run build:wasm && webpack serve --mode development --open",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "format": "prettier --write 'src/**/*.{ts,tsx,scss,html}'",
     "test": "jest"

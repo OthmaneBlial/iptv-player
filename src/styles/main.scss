@@ -4,93 +4,173 @@
 @use "components/player" as *;
 @use "components/sidebar" as *;
 
+// Reset & Base
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: "IBM Plex Sans", sans-serif;
 }
 
 html {
   min-height: 100%;
+  font-size: 16px;
 }
 
 body {
-  min-height: 100vh;
-  color: var(--text-color);
-  background-color: var(--bg-color);
-  background-image:
-    radial-gradient(circle at 10% 10%, rgba(125, 211, 252, 0.12), transparent 28%),
-    radial-gradient(circle at 85% 8%, rgba(34, 197, 94, 0.14), transparent 24%),
-    radial-gradient(circle at 80% 78%, rgba(125, 211, 252, 0.08), transparent 30%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 42%);
-  transition: background-color var(--transition-speed), color var(--transition-speed);
-  padding: 18px;
+  margin: 0;
+  padding: 0;
+  font-family: "Space Grotesk", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  overflow: hidden; // No page scrolling
 }
 
+// Typography
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Syne", display-name, sans-serif;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+h1 {
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: 1.5rem;
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-size: 1.125rem;
+}
+
+p {
+  color: var(--text-secondary);
+}
+
+// Focus styles
 :focus-visible {
-  outline: 2px solid var(--accent-color);
-  outline-offset: 3px;
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
-#app {
-  width: min(1500px, 100%);
-  margin: 0 auto;
+// Remove tap highlight
+button,
+summary,
+a {
+  -webkit-tap-highlight-color: transparent;
 }
 
-.main-container {
-  display: grid;
-  grid-template-columns: minmax(320px, var(--sidebar-width)) minmax(0, 1fr);
-  gap: 20px;
-  min-height: calc(100vh - 36px);
-  align-items: stretch;
+// Reset details marker
+summary {
+  list-style: none;
+  cursor: pointer;
+}
+summary::-webkit-details-marker {
+  display: none;
 }
 
+// Form elements
 button,
 input,
 select,
 textarea {
   font: inherit;
+  border: none;
+  background: none;
 }
 
-button,
-summary {
-  -webkit-tap-highlight-color: transparent;
+// App container
+#app {
+  width: 100%;
+  min-height: 100vh;
 }
 
-@media (max-width: 980px) {
+// Main layout - No padding, fixed to viewport
+.main-container {
+  display: grid;
+  grid-template-columns: minmax(320px, var(--sidebar-width)) minmax(0, 1fr);
+  gap: 0;
+  height: 100vh;
+  max-width: 100%;
+  margin: 0;
+}
+
+// Custom scrollbar on body
+body {
+  @include scrollbar(8px, rgba(139, 92, 246, 0.3));
+}
+
+// Animations
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+// Responsive
+@media (max-width: 1024px) {
   .main-container {
     grid-template-columns: 1fr;
-    min-height: auto;
+    gap: 16px;
   }
 }
 
 @media (max-width: 640px) {
-  body {
+  .main-container {
     padding: 12px;
+    gap: 12px;
   }
 
-  .main-container {
-    gap: 14px;
+  body {
+    font-size: 14px;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  h2 {
+    font-size: 1.25rem;
   }
 }
 
+// Reduced motion
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation: none !important;
-    scroll-behavior: auto !important;
-    transition: none !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
+// High contrast
 @media (prefers-contrast: more) {
   :root {
-    --panel-border: rgba(255, 255, 255, 0.3);
-  }
-
-  [data-theme="light"] {
-    --panel-border: rgba(22, 32, 39, 0.24);
+    --border-subtle: rgba(255, 255, 255, 0.3);
+    --border-medium: rgba(255, 255, 255, 0.5);
   }
 }

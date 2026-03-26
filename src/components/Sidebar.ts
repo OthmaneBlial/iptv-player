@@ -1,331 +1,247 @@
+import { PLAYLIST_PRESETS } from "../utils/playlistPresets";
+
 export function Sidebar(): HTMLElement {
   const aside = document.createElement("aside");
+  const presetOptions = PLAYLIST_PRESETS.map(
+    (preset) =>
+      `<option value="${preset.id}">${preset.label} - ${preset.description}</option>`
+  ).join("");
   aside.id = "sidebar";
   aside.innerHTML = `
-    <div class="sidebar-hero">
-      <div class="sidebar-hero__copy">
-        <p class="sidebar-eyebrow">Watch-first workspace</p>
-        <h1>IPTV Player</h1>
-        <p class="sidebar-summary">
-          Load a playlist, search fast, and keep advanced tools tucked away until you need them.
-        </p>
+    <!-- Brand Header -->
+    <div class="sidebar-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fas fa-play"></i>
+        </div>
+        <h1>Streamflow</h1>
       </div>
-      <button class="theme-toggle" id="toggleTheme" type="button" aria-label="Toggle theme">
-        <i class="fas fa-moon"></i> Dark
+      <button class="theme-toggle" id="toggleTheme" aria-label="Toggle theme">
+        <i class="fas fa-moon"></i>
       </button>
     </div>
 
-    <div class="sidebar-status-card">
-      <div class="status-row">
-        <span class="status-label">Active Playlist</span>
-        <strong id="headerPlaylistName">No playlist</strong>
+    <!-- Playlist URL Input -->
+    <div class="input-card">
+      <label for="playlistUrl">Playlist URL</label>
+      <div class="input-row">
+        <input
+          type="text"
+          id="playlistUrl"
+          placeholder="Paste M3U/M3U8 URL..."
+          aria-label="Playlist URL"
+          autocomplete="url"
+        />
+        <button id="importPlaylist" type="button" aria-label="Load playlist">
+          <i class="fas fa-arrow-right"></i>
+        </button>
       </div>
-      <div class="status-grid">
-        <div class="status-chip">
-          <span class="status-chip__label">Channels</span>
-          <strong id="headerChannelCountValue">0</strong>
-        </div>
-        <div class="status-chip">
-          <span class="status-chip__label">Guide</span>
-          <strong id="headerGuideStatus">Not loaded</strong>
-        </div>
-        <div class="status-chip status-chip--wide">
-          <span class="status-chip__label">Profile</span>
-          <strong id="headerProfileStatus">Owner • Open</strong>
-        </div>
-      </div>
-    </div>
-
-    <div class="playlist-input playlist-import-card">
-      <div class="import-block">
-        <label for="playlistUrl">Playlist URL</label>
-        <div class="import-row">
-          <input
-            type="text"
-            id="playlistUrl"
-            placeholder="https://iptv-org.github.io/iptv/index.m3u"
-            aria-label="Playlist URL"
-            autocomplete="url"
-          />
-          <button id="importPlaylist" type="button" aria-label="Load playlist from URL">
-            <i class="fas fa-download"></i> Load
+      <div class="preset-stack">
+        <label for="playlistPreset">Quick Sources</label>
+        <div class="preset-row">
+          <select
+            id="playlistPreset"
+            class="select-input preset-select"
+            aria-label="Choose a preset playlist source"
+          >
+            ${presetOptions}
+          </select>
+          <button id="loadPlaylistPreset" type="button" class="btn-secondary">
+            Load
           </button>
         </div>
-        <p id="playlistFeedback" class="playlist-feedback" data-tone="neutral" role="status" aria-live="polite">
-          Load a playlist from a remote URL to start browsing.
+        <p class="preset-hint">
+          Built-in demo plus public playlists. Import is reliable; individual channels can still be dead or geo-blocked.
         </p>
       </div>
+      <p id="playlistFeedback" class="feedback" role="status" aria-live="polite">
+        Load a playlist to start watching.
+      </p>
     </div>
 
-    <section class="channel-browser" aria-label="Channel browser">
-      <div class="section-heading">
-        <div>
-          <p class="section-kicker">Browse</p>
-          <h2>
-            Channels
-            <span id="channelCount">0</span>
-          </h2>
-        </div>
-      </div>
-
+    <!-- Search Bar -->
+    <div class="search-bar">
+      <i class="fas fa-search"></i>
       <input
         type="search"
         id="searchChannels"
-        class="search-input"
-        placeholder="Search channels, groups, countries..."
+        placeholder="Search channels..."
         aria-label="Search channels"
       />
+    </div>
 
-      <div id="channelGroupChips" class="channel-group-chips"></div>
+    <!-- Channel List Container (Main Content) -->
+    <div class="content-area">
+      <div class="filter-chips" id="channelGroupChips"></div>
+      <ul class="channel-list" id="channelsList"></ul>
+    </div>
 
-      <details class="sidebar-panel sidebar-panel--filters">
-        <summary>Filters & Sort</summary>
-        <div class="sidebar-panel__content">
-          <div class="channel-filter-grid">
-            <select id="channelGroupFilter" class="channel-filter-select" aria-label="Filter channels by category">
-              <option value="all">All Categories</option>
-            </select>
-            <select id="channelCountryFilter" class="channel-filter-select" aria-label="Filter channels by country">
-              <option value="all">All Countries</option>
-            </select>
-            <select id="channelLanguageFilter" class="channel-filter-select" aria-label="Filter channels by language">
-              <option value="all">All Languages</option>
-            </select>
-            <select id="channelSort" class="channel-filter-select" aria-label="Sort channels">
-              <option value="name">A-Z</option>
-              <option value="health">Source Health</option>
-              <option value="recent">Recently Watched</option>
-              <option value="favorites">Favorites First</option>
-              <option value="group">Group Order</option>
-            </select>
-          </div>
+    <!-- Bottom Tabs -->
+    <div class="bottom-tabs">
+      <button class="tab-btn active" data-tab="channels" role="tab" aria-selected="true">
+        <i class="fas fa-tv"></i>
+      </button>
+      <button class="tab-btn" data-tab="favorites" role="tab" aria-selected="false">
+        <i class="fas fa-heart"></i>
+      </button>
+      <button class="tab-btn" data-tab="history" role="tab" aria-selected="false">
+        <i class="fas fa-clock-rotate-left"></i>
+      </button>
+      <button class="tab-btn" id="settingsBtn" aria-label="Settings">
+        <i class="fas fa-gear"></i>
+      </button>
+    </div>
+
+    <!-- Settings Panel (Modal) -->
+    <div class="settings-panel" id="settingsPanel" hidden>
+      <div class="settings-backdrop" id="settingsBackdrop"></div>
+      <div class="settings-content">
+        <div class="settings-header">
+          <h2>Settings</h2>
+          <button class="close-btn" id="closeSettings" aria-label="Close">
+            <i class="fas fa-xmark"></i>
+          </button>
         </div>
-      </details>
 
-      <ul class="channel-list" id="channelsList">
-        <!-- Channels will be populated here -->
-      </ul>
-    </section>
+        <div class="settings-sections">
+          <!-- Quick Settings -->
+          <section class="settings-section">
+            <h3>Quick Settings</h3>
 
-    <div class="sidebar-stack">
-      <details class="sidebar-panel">
-        <summary>Collections</summary>
-        <div class="sidebar-panel__content">
-          <details class="nested-panel">
-            <summary>For You</summary>
-            <div class="nested-panel__content">
-              <ul class="history-list personalized-sections" id="personalizedSections">
-                <!-- Personalized recommendations render here -->
-              </ul>
+            <div class="settings-field">
+              <label for="profileSelect">Viewing Profile</label>
+              <select id="profileSelect" class="select-input" aria-label="Active profile"></select>
             </div>
-          </details>
 
-          <details class="nested-panel">
-            <summary>Pinned</summary>
-            <div class="nested-panel__content">
-              <ul class="favorites-list" id="pinnedList">
-                <!-- Pinned channels will be populated here -->
-              </ul>
+            <div class="filter-row">
+              <select id="channelGroupFilter" class="filter-select" aria-label="Filter by category">
+                <option value="all">All Categories</option>
+              </select>
+              <select id="channelCountryFilter" class="filter-select" aria-label="Filter by country">
+                <option value="all">All Countries</option>
+              </select>
+              <select id="channelSort" class="filter-select" aria-label="Sort channels">
+                <option value="name">A-Z</option>
+              </select>
             </div>
-          </details>
+          </section>
 
-          <details class="nested-panel">
-            <summary>Favorites</summary>
-            <div class="nested-panel__content">
-              <ul class="favorites-list" id="favoritesList">
-                <!-- Favorites will be populated here -->
-              </ul>
-            </div>
-          </details>
+          <!-- Advanced Settings -->
+          <details class="settings-advanced">
+            <summary>
+              <h3>Advanced Settings</h3>
+              <i class="fas fa-chevron-down"></i>
+            </summary>
 
-          <details class="nested-panel">
-            <summary>History</summary>
-            <div class="nested-panel__content">
-              <ul class="history-list" id="historyList">
-                <!-- History will be populated here -->
-              </ul>
-              <button id="clearHistory" class="clear-button" type="button" aria-label="Clear watch history">
-                <i class="fas fa-trash"></i> Clear History
-              </button>
-            </div>
-          </details>
-        </div>
-      </details>
-
-      <details class="sidebar-panel">
-        <summary>Settings</summary>
-        <div class="sidebar-panel__content">
-          <details class="nested-panel">
-            <summary>Playlist Sources</summary>
-            <div class="nested-panel__content">
-              <div class="playlist-input playlist-input--nested">
-                <div class="import-block">
+            <div class="advanced-content">
+              <!-- Playlist Sources -->
+              <section class="settings-section">
+                <h4><i class="fas fa-list"></i> Playlist Sources</h4>
+                <div class="settings-field">
                   <label for="rawPlaylistInput">Raw Playlist</label>
                   <textarea
                     id="rawPlaylistInput"
-                    rows="6"
-                    placeholder="#EXTM3U&#10;#EXTINF:-1,Sample Channel&#10;https://example.com/live.m3u8"
+                    rows="4"
+                    placeholder="#EXTM3U&#10;#EXTINF:-1,Channel Name&#10;https://example.com/stream.m3u8"
                     aria-label="Raw playlist content"
                   ></textarea>
-                  <div class="import-row import-row--compact">
-                    <label class="file-import-button" for="playlistFile">
+                  <div class="settings-actions">
+                    <label class="btn-secondary" for="playlistFile">
                       <i class="fas fa-file-import"></i> Import File
                     </label>
-                    <input type="file" id="playlistFile" accept=".m3u,.m3u8,text/plain" />
-                    <button id="loadRawPlaylist" type="button">
-                      <i class="fas fa-paste"></i> Load Text
+                    <input type="file" id="playlistFile" accept=".m3u,.m3u8,text/plain" hidden />
+                    <button id="loadRawPlaylist" class="btn-primary">
+                      <i class="fas fa-paste"></i> Load
                     </button>
                   </div>
                 </div>
 
-                <div
-                  id="playlistDropZone"
-                  class="playlist-dropzone"
-                  tabindex="0"
-                  role="button"
-                  aria-label="Drop playlist file here"
-                >
-                  <i class="fas fa-cloud-upload-alt"></i>
-                  <span>Drop a playlist file here or tap to import one.</span>
-                </div>
-              </div>
-
-              <div class="playlist-library-panel">
-                <div class="playlist-library-header">
-                  <div>
-                    <p class="playlist-library-kicker">Library</p>
-                    <h2>Saved Playlists</h2>
+                <div class="playlist-library">
+                  <div class="library-header">
+                    <span>Saved Playlists</span>
+                    <div class="library-actions">
+                      <button id="exportPlaylistLibrary" class="icon-btn" aria-label="Export library">
+                        <i class="fas fa-download"></i>
+                      </button>
+                      <label class="icon-btn" for="importPlaylistLibraryFile">
+                        <i class="fas fa-upload"></i>
+                      </label>
+                      <input type="file" id="importPlaylistLibraryFile" accept="application/json" hidden />
+                    </div>
                   </div>
-                  <div class="playlist-library-tools">
-                    <button id="exportPlaylistLibrary" class="library-tool-button" type="button">
-                      Export
-                    </button>
-                    <label class="library-tool-button" for="importPlaylistLibraryFile">
-                      Import Backup
-                    </label>
-                    <input
-                      type="file"
-                      id="importPlaylistLibraryFile"
-                      accept="application/json"
-                    />
-                  </div>
+                  <ul id="playlistLibraryList" class="library-list"></ul>
                 </div>
-                <ul id="playlistLibraryList" class="playlist-library-list"></ul>
-              </div>
-            </div>
-          </details>
+              </section>
 
-          <details class="nested-panel">
-            <summary>Guide & Sync</summary>
-            <div class="nested-panel__content">
-              <div class="playlist-input playlist-input--nested">
-                <div class="import-block">
-                  <label for="epgUrl">EPG XMLTV</label>
-                  <div class="import-row">
-                    <input type="text" id="epgUrl" placeholder="Enter XMLTV guide URL" aria-label="EPG XMLTV URL" />
-                    <button id="loadEpgUrl" type="button" aria-label="Load EPG from URL">
-                      <i class="fas fa-tv"></i> Load EPG
+              <!-- EPG & Sync -->
+              <section class="settings-section">
+                <h4><i class="fas fa-calendar"></i> Guide & Sync</h4>
+                <div class="settings-field">
+                  <label for="epgUrl">EPG XMLTV URL</label>
+                  <div class="input-row">
+                    <input type="text" id="epgUrl" placeholder="Enter XMLTV URL" aria-label="EPG URL" />
+                    <button id="loadEpgUrl" class="btn-secondary">
+                      <i class="fas fa-download"></i>
                     </button>
                   </div>
-                  <div class="import-row import-row--compact">
-                    <label class="file-import-button" for="epgFile">
+                  <div class="settings-actions">
+                    <label class="btn-secondary" for="epgFile">
                       <i class="fas fa-file-arrow-up"></i> Import EPG File
                     </label>
-                    <input type="file" id="epgFile" accept=".xml,.xmltv,text/xml,application/xml" />
+                    <input type="file" id="epgFile" accept=".xml,.xmltv,text/xml" hidden />
                   </div>
-                  <p id="epgFeedback" class="playlist-feedback" data-tone="neutral" role="status" aria-live="polite">
-                    Import XMLTV data to unlock now and next programme details.
-                  </p>
                 </div>
 
-                <details class="nested-panel nested-panel--soft">
-                  <summary>Guide Timeline</summary>
-                  <div class="nested-panel__content">
-                    <ul class="history-list" id="guideProgramsList">
-                      <!-- Guide programs will be populated here -->
-                    </ul>
-                  </div>
-                </details>
-
-                <div class="import-block">
-                  <label for="syncToken">Cloud Sync</label>
-                  <form id="syncForm" class="sync-form">
+                <div class="settings-field">
+                  <label>Cloud Sync</label>
+                  <div class="input-row">
                     <input
                       type="password"
                       id="syncToken"
-                      placeholder="GitHub token for private gist sync"
-                      aria-label="GitHub token for cloud sync"
+                      placeholder="GitHub token"
+                      aria-label="GitHub token"
                       autocomplete="current-password"
                     />
+                  </div>
+                  <div class="input-row">
                     <input
                       type="text"
                       id="syncGistId"
-                      placeholder="Existing gist ID or leave empty to create one"
-                      aria-label="GitHub gist identifier"
-                      autocomplete="off"
+                      placeholder="Gist ID (optional)"
+                      aria-label="Gist ID"
                     />
-                    <div class="import-row import-row--compact">
-                      <button id="pushCloudSync" type="button">
-                        <i class="fas fa-cloud-arrow-up"></i> Push Sync
-                      </button>
-                      <button id="pullCloudSync" type="button">
-                        <i class="fas fa-cloud-arrow-down"></i> Pull Sync
-                      </button>
-                    </div>
-                  </form>
-                  <p id="syncFeedback" class="playlist-feedback" data-tone="neutral" role="status" aria-live="polite">
-                    Local-first mode is active. Add a GitHub token to sync through a private gist.
-                  </p>
+                  </div>
+                  <div class="settings-actions">
+                    <button id="pushCloudSync" class="btn-secondary">
+                      <i class="fas fa-cloud-arrow-up"></i> Push
+                    </button>
+                    <button id="pullCloudSync" class="btn-secondary">
+                      <i class="fas fa-cloud-arrow-down"></i> Pull
+                    </button>
+                  </div>
+                  <p id="syncFeedback" class="feedback" role="status"></p>
                 </div>
+              </section>
 
-                <div class="install-actions">
-                  <div class="install-status" id="installStatus">Use your browser menu to install</div>
-                  <button class="library-tool-button" id="installAppButton" type="button" hidden>
-                    <i class="fas fa-download"></i> Install App
+              <!-- System -->
+              <section class="settings-section">
+                <h4><i class="fas fa-wrench"></i> System</h4>
+                <div class="settings-actions">
+                  <button id="scanSourceHealth" class="btn-secondary">
+                    <i class="fas fa-heart-pulse"></i> Scan Sources
+                  </button>
+                  <button id="exportDiagnostics" class="btn-secondary">
+                    <i class="fas fa-file-export"></i> Export Logs
                   </button>
                 </div>
-              </div>
-            </div>
-          </details>
-
-          <details class="nested-panel">
-            <summary>Profiles</summary>
-            <div class="nested-panel__content">
-              <div class="profile-controls-panel">
-                <label for="profileSelect">Viewing Profile</label>
-                <select id="profileSelect" class="channel-filter-select" aria-label="Active viewing profile"></select>
-                <button class="library-tool-button" id="toggleProfileAccess" type="button" hidden>
-                  Unlock Filters
-                </button>
-              </div>
-            </div>
-          </details>
-
-          <details class="nested-panel">
-            <summary>System</summary>
-            <div class="nested-panel__content">
-              <div class="section-inline-tools">
-                <button id="scanSourceHealth" class="playlist-action-button" type="button">
-                  <i class="fas fa-heart-pulse"></i> Scan Active Playlist
-                </button>
-                <button id="exportDiagnostics" class="playlist-action-button" type="button">
-                  <i class="fas fa-file-export"></i> Export Logs
-                </button>
-              </div>
-              <p id="sourceHealthFeedback" class="playlist-feedback" data-tone="neutral" role="status" aria-live="polite">
-                Validate the active playlist and report dead channels to keep trusted streams on top.
-              </p>
-              <ul class="history-list" id="sourceHealthList">
-                <!-- Source health checks render here -->
-              </ul>
-              <ul class="history-list" id="diagnosticsList">
-                <!-- Diagnostics will be populated here -->
-              </ul>
+                <ul class="diagnostics-list" id="diagnosticsList"></ul>
+              </section>
             </div>
           </details>
         </div>
-      </details>
+      </div>
     </div>
   `;
+
   return aside;
 }

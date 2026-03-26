@@ -1,0 +1,11 @@
+{
+  "name": "iptv-wasm",
+  "version": "0.1.0",
+  "description": "High-performance WASM backend for IPTV Player",
+  "main": "iptv_wasm.js",
+  "types": "iptv_wasm.d.ts",
+  "scripts": {
+    "build": "wasm-pack build --target web --out-dir pkg",
+    "build:release": "wasm-pack build --release --target web --out-dir pkg"
+  }
+}

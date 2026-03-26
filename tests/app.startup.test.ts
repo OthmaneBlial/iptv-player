@@ -29,5 +29,8 @@ describe("app startup", () => {
     expect(document.getElementById("sidebar")).not.toBeNull();
     expect(document.getElementById("videoPlayer")).not.toBeNull();
     expect(document.getElementById("toggleTheme")).not.toBeNull();
+    expect(document.getElementById("playlistPreset")).not.toBeNull();
+    expect(document.getElementById("loadPlaylistPreset")).not.toBeNull();
+    expect(document.getElementById("guidePanel")?.hasAttribute("hidden")).toBe(true);
   });
 });

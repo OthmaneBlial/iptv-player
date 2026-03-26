@@ -6,7 +6,23 @@ interface BeforeInstallPromptEvent extends Event {
   }>;
 }
 
+declare const __ENABLE_PWA__: boolean | undefined;
+
 let deferredPrompt: BeforeInstallPromptEvent | null = null;
+
+async function disableDevPwa(): Promise<void> {
+  if (!("serviceWorker" in navigator)) {
+    return;
+  }
+
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  await Promise.all(registrations.map((registration) => registration.unregister()));
+
+  if ("caches" in window) {
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+  }
+}
 
 function updateInstallUi(): void {
   const installButton = document.getElementById(
@@ -32,7 +48,14 @@ function updateInstallUi(): void {
 }
 
 export function initializePwa(): void {
-  if ("serviceWorker" in navigator) {
+  const pwaEnabled =
+    typeof __ENABLE_PWA__ !== "undefined" ? __ENABLE_PWA__ === true : true;
+
+  if (!pwaEnabled) {
+    void disableDevPwa().catch((error) => {
+      console.warn("Failed to disable service workers for development.", error);
+    });
+  } else if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
       navigator.serviceWorker.register("./service-worker.js").catch((error) => {
         console.error("Service worker registration failed.", error);

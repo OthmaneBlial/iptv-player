@@ -1,25 +1,28 @@
 declare const __ENABLE_STREAM_PROXY__: boolean | undefined;
 
-const STREAM_PROXY_PATH = "/__stream_proxy__";
+const DEV_STREAM_PROXY_PATH = "/__stream_proxy__";
+const PROD_STREAM_PROXY_PATH = "/api/stream";
 
 function isHttpUrl(url: string): boolean {
   return /^https?:\/\//i.test(url);
 }
 
 export function isStreamProxyEnabled(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    typeof __ENABLE_STREAM_PROXY__ !== "undefined" &&
-    __ENABLE_STREAM_PROXY__ === true
-  );
+  return typeof window !== "undefined";
 }
 
 export function getProxyAwareUrl(url: string): string {
-  if (!isStreamProxyEnabled() || !isHttpUrl(url) || typeof window === "undefined") {
+  if (!isHttpUrl(url) || typeof window === "undefined") {
     return url;
   }
 
-  const proxiedUrl = new URL(STREAM_PROXY_PATH, window.location.origin);
+  // In development, use webpack proxy; in production, use service worker
+  const proxyPath =
+    typeof __ENABLE_STREAM_PROXY__ !== "undefined" && __ENABLE_STREAM_PROXY__ === true
+      ? DEV_STREAM_PROXY_PATH
+      : PROD_STREAM_PROXY_PATH;
+
+  const proxiedUrl = new URL(proxyPath, window.location.origin);
   proxiedUrl.searchParams.set("url", url);
   return proxiedUrl.toString();
 }

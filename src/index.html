@@ -2,14 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Broadcast Console</title>
+    <title>Streamflow</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#07100c" />
+    <meta name="theme-color" content="#0a0a0a" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
-    <!-- Fonts and Icons -->
+    <!-- Fonts: Syne for headlines, Space Grotesk for UI -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <!-- Font Awesome for Icons -->
@@ -19,6 +19,52 @@
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
+    <script>
+      (function () {
+        var devHosts = new Set(["127.0.0.1", "localhost", "::1"]);
+        if (!devHosts.has(window.location.hostname)) {
+          return;
+        }
+
+        if (!("serviceWorker" in navigator)) {
+          return;
+        }
+
+        var reloadFlag = "__streamflow_dev_sw_reset__";
+        navigator.serviceWorker.getRegistrations().then(function (registrations) {
+          if (!registrations.length) {
+            sessionStorage.removeItem(reloadFlag);
+            return;
+          }
+
+          if (sessionStorage.getItem(reloadFlag) === "done") {
+            sessionStorage.removeItem(reloadFlag);
+            return;
+          }
+
+          sessionStorage.setItem(reloadFlag, "done");
+
+          Promise.all(
+            registrations.map(function (registration) {
+              return registration.unregister();
+            })
+          )
+            .then(function () {
+              return caches.keys();
+            })
+            .then(function (cacheNames) {
+              return Promise.all(
+                cacheNames.map(function (cacheName) {
+                  return caches.delete(cacheName);
+                })
+              );
+            })
+            .finally(function () {
+              window.location.reload();
+            });
+        });
+      })();
+    </script>
   </head>
   <body data-theme="dark">
     <div id="app"></div>

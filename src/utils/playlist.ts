@@ -17,6 +17,7 @@ import {
 } from "./favorites";
 import { logDiagnostic } from "./diagnostics";
 import { getProxyAwareUrl } from "./network";
+import { normalizePlaylistImportUrl } from "./playlistPresets";
 import { isGroupBlockedForProfile } from "./profiles";
 import {
   getSourceHealthLabel,
@@ -25,6 +26,10 @@ import {
 import {
   setStoredPlaylistLibrary,
 } from "./storage";
+import { initWasm, parsePlaylistSync, fuzzyScoreSync } from "./api";
+
+// Initialize WASM module on load
+initWasm().catch(console.error);
 
 let loadedChannels = 0;
 const CHANNELS_PER_LOAD = 50;
@@ -33,42 +38,35 @@ let filteredChannelsCache: Channel[] = [];
 let filteredChannelsCacheKey = "";
 
 async function parseM3UAsync(data: string, baseUrl = ""): Promise<Channel[]> {
-  if (typeof Worker === "undefined" || data.length < 50000) {
-    return parseM3U(data, baseUrl);
-  }
-
-  return new Promise((resolve, reject) => {
-    const worker = new Worker("./workers/playlist.worker.js");
-
-    worker.onmessage = (event: MessageEvent<{ channels: Channel[] }>) => {
-      worker.terminate();
-      resolve(event.data.channels);
-    };
-
-    worker.onerror = (error) => {
-      worker.terminate();
-      reject(error);
-    };
-
-    worker.postMessage({ baseUrl, data });
-  });
+  // Use WASM parser for better performance
+  const { iptvApi } = await import("./api");
+  return await iptvApi.parsePlaylist(data, baseUrl);
 }
 
-export async function fetchPlaylist(url: string): Promise<void> {
+export async function fetchPlaylist(
+  url: string,
+  options: {
+    sourceLabel?: string;
+  } = {}
+): Promise<void> {
+  const requestUrl = normalizePlaylistImportUrl(url);
+  const loadingLabel = options.sourceLabel || requestUrl;
+
   try {
-    setPlaylistFeedback("Loading playlist from remote URL...", "neutral");
-    const response = await fetch(getProxyAwareUrl(url));
+    setPlaylistFeedback(`Loading ${loadingLabel}...`, "neutral");
+    const response = await fetch(getProxyAwareUrl(requestUrl));
     if (!response.ok) throw new Error("Network response was not ok");
     const data = await response.text();
+    const resolvedUrl = response.url || requestUrl;
     await importPlaylistFromText(data, {
-      sourceLabel: url,
+      sourceLabel: options.sourceLabel || resolvedUrl,
       sourceType: "url",
-      url,
+      url: resolvedUrl,
     });
   } catch (error) {
-    logDiagnostic("error", "Remote playlist import failed.", url);
+    logDiagnostic("error", "Remote playlist import failed.", requestUrl);
     setPlaylistFeedback(
-      "Failed to load playlist. Check the URL and try again.",
+      `Failed to load ${loadingLabel}. Check the URL and try again.`,
       "error"
     );
     alert("Failed to load playlist. Please check the URL.");
@@ -530,24 +528,8 @@ function getFuzzyScore(value: string, query: string): number {
     return 0;
   }
 
-  const normalizedValue = value.toLowerCase();
-  if (normalizedValue.includes(query)) {
-    return 1000 - normalizedValue.indexOf(query);
-  }
-
-  let score = 0;
-  let queryIndex = 0;
-  for (const character of normalizedValue) {
-    if (character === query[queryIndex]) {
-      score += 10;
-      queryIndex += 1;
-      if (queryIndex === query.length) {
-        return score;
-      }
-    }
-  }
-
-  return -1;
+  // Use WASM fuzzy score for better performance
+  return fuzzyScoreSync(value, query);
 }
 
 function sortChannels(channels: Channel[]): Channel[] {

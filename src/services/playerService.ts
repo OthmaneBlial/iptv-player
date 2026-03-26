@@ -34,9 +34,25 @@ let playerStatusBadge: HTMLElement | null = null;
 let playerNetworkBadge: HTMLElement | null = null;
 let playerRetriesBadge: HTMLElement | null = null;
 let reportCurrentStreamButton: HTMLButtonElement | null = null;
+let playerContainer: HTMLElement | null = null;
 let lastRequestedChannel: LastPlayedChannel | null = null;
 let lastConfirmedHealthyUrl = "";
 let playbackSessionId = 0;
+
+function updateTrackSelector(
+  select: HTMLSelectElement | null,
+  options: PlayerTrackOption[],
+  selectedValue: number
+): void {
+  if (!select) {
+    return;
+  }
+
+  select.innerHTML = options
+    .map((option) => `<option value="${option.value}">${option.label}</option>`)
+    .join("");
+  select.value = selectedValue.toString();
+}
 
 function teardownHls(): void {
   if (hls) {
@@ -119,56 +135,89 @@ function updateMuteButton(): void {
 
 function renderPlayerState(): void {
   const { player } = appStore.getState();
-  if (
-    !currentChannelName ||
-    !playerStatus ||
-    !resumeButton ||
-    !qualitySelect ||
-    !audioTrackSelect ||
-    !playerStatusBadge ||
-    !playerNetworkBadge ||
-    !playerRetriesBadge
-  ) {
+  const hasChannel = Boolean(player.currentChannel);
+  const statusLabel =
+    player.status === "playing"
+      ? "ON AIR"
+      : player.status === "loading"
+        ? "BUFFERING"
+        : player.status === "error"
+          ? "SIGNAL LOST"
+          : "STANDBY";
+
+  playerContainer?.setAttribute("data-player-state", player.status);
+  playerContainer?.setAttribute("data-has-channel", hasChannel ? "true" : "false");
+
+  if (currentChannelName) {
+    currentChannelName.textContent =
+      player.currentChannel?.name || "Select a channel to start watching";
+  }
+
+  if (resumeButton) {
+    if (player.currentChannel) {
+      resumeButton.hidden = false;
+      resumeButton.textContent = `Resume ${player.currentChannel.name}`;
+    } else {
+      resumeButton.hidden = true;
+      resumeButton.textContent = "Resume";
+    }
+  }
+
+  updateTrackSelector(
+    qualitySelect,
+    player.qualityLevels,
+    player.selectedQuality
+  );
+  updateTrackSelector(
+    audioTrackSelect,
+    player.audioTracks,
+    player.selectedAudioTrack
+  );
+
+  if (qualitySelect) {
+    qualitySelect.disabled = !hasChannel || player.qualityLevels.length <= 1;
+  }
+
+  if (audioTrackSelect) {
+    audioTrackSelect.disabled = !hasChannel || player.audioTracks.length <= 1;
+  }
+
+  if (retryButton) {
+    retryButton.disabled = !hasChannel;
+  }
+
+  if (reportCurrentStreamButton) {
+    reportCurrentStreamButton.disabled = !hasChannel;
+  }
+
+  if (playerStatusBadge) {
+    playerStatusBadge.textContent = statusLabel;
+  }
+
+  if (playerNetworkBadge) {
+    playerNetworkBadge.textContent =
+      player.networkStatus === "offline" ? "Offline" : "Online";
+  }
+
+  if (playerRetriesBadge) {
+    playerRetriesBadge.textContent = `Retries ${player.retries}/${MAX_RETRIES}`;
+  }
+
+  if (!playerStatus) {
     return;
   }
 
-  currentChannelName.textContent =
-    player.currentChannel?.name || "Select a channel to start watching";
-
-  if (player.currentChannel) {
-    resumeButton.hidden = false;
-    resumeButton.textContent = `Resume ${player.currentChannel.name}`;
-  } else {
-    resumeButton.hidden = true;
-    resumeButton.textContent = "Resume";
-  }
-
-  qualitySelect.innerHTML = player.qualityLevels
-    .map(
-      (option) => `<option value="${option.value}">${option.label}</option>`
-    )
-    .join("");
-  qualitySelect.value = player.selectedQuality.toString();
-
-  audioTrackSelect.innerHTML = player.audioTracks
-    .map(
-      (option) => `<option value="${option.value}">${option.label}</option>`
-    )
-    .join("");
-  audioTrackSelect.value = player.selectedAudioTrack.toString();
-
-  playerStatusBadge.textContent = player.status.toUpperCase();
-  playerNetworkBadge.textContent =
-    player.networkStatus === "offline" ? "Offline" : "Online";
-  playerRetriesBadge.textContent = `Retries ${player.retries}/${MAX_RETRIES}`;
-
   if (player.status === "loading") {
-    playerStatus.textContent = "Connecting to stream...";
+    playerStatus.textContent = player.currentChannel
+      ? `Locking onto ${player.currentChannel.name}. The stream is connecting now.`
+      : "Preparing the live player.";
     return;
   }
 
   if (player.status === "playing") {
-    playerStatus.textContent = "Live playback in progress.";
+    playerStatus.textContent = player.currentChannel
+      ? `${player.currentChannel.name} is streaming live.`
+      : "Live playback in progress.";
     return;
   }
 
@@ -179,8 +228,8 @@ function renderPlayerState(): void {
   }
 
   playerStatus.textContent = player.currentChannel
-    ? "Ready to resume your last channel."
-    : "Load a playlist, browse channels, and start playback.";
+    ? "Channel armed. Resume when you are ready."
+    : "Load a playlist, pick a channel, and the player will light up here.";
 }
 
 function syncStoredChannel(channel: LastPlayedChannel): void {
@@ -208,11 +257,27 @@ function syncStoredChannel(channel: LastPlayedChannel): void {
 }
 
 export function playChannel(url: string, channelName: string): void {
+  console.log('[PLAYER] playChannel called:', { url, channelName });
+
+  // Re-find video element in case DOM changed
+  if (!video) {
+    video = document.getElementById("videoPlayer") as HTMLVideoElement | null;
+    console.log('[PLAYER] Re-found video element:', video);
+  }
+
+  if (!video) {
+    console.error('[PLAYER] Video element not found!');
+    alert('Player not initialized. Please refresh the page.');
+    return;
+  }
+
   const currentChannel = {
     name: channelName,
     playedAt: new Date().toISOString(),
     url,
   };
+
+  console.log('[PLAYER] Starting playback for:', currentChannel);
   startPlayback(currentChannel, {
     persistHistory: true,
     resetRetries: true,
@@ -230,17 +295,22 @@ function startPlayback(
     return;
   }
 
+  const existingRetries = appStore.getState().player.retries;
   lastRequestedChannel = currentChannel;
   lastConfirmedHealthyUrl = "";
   const currentPlaybackSessionId = ++playbackSessionId;
   syncStoredChannel(currentChannel);
   if (!options.resetRetries) {
     appStore.setPlayer({
-      retries: appStore.getState().player.retries,
+      retries: existingRetries,
     });
   }
   teardownHls();
   logDiagnostic("info", `Starting playback for ${currentChannel.name}`, currentChannel.url);
+
+  console.log('[PLAYER] HLS supported:', Hls.isSupported());
+  console.log('[PLAYER] Video element:', video);
+  console.log('[PLAYER] Stream URL:', currentChannel.url);
 
   if (Hls.isSupported()) {
     hls = new Hls({
@@ -255,8 +325,13 @@ function startPlayback(
     });
     hls.loadSource(currentChannel.url);
     hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+    console.log('[PLAYER HLS] Loading source:', currentChannel.url);
+    hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+      console.log('[PLAYER HLS] Manifest parsed:', data);
       requestVideoPlayback(currentPlaybackSessionId);
+    });
+    hls.on(Hls.Events.ERROR, (event, data) => {
+      console.error('[PLAYER HLS] Error:', data);
     });
     hls.on(Hls.Events.LEVELS_UPDATED, (_, data) => {
       const qualityLevels: PlayerTrackOption[] = [
@@ -394,6 +469,7 @@ function handlePlaybackRetry(errorMessage: string): void {
 
 export function initializePlayerService(): void {
   video = document.getElementById("videoPlayer") as HTMLVideoElement | null;
+  playerContainer = video?.closest(".player-container") as HTMLElement | null;
   muteButton = document.getElementById("muteButton") as HTMLButtonElement | null;
   volumeSlider = document.getElementById(
     "volumeSlider"
@@ -423,17 +499,7 @@ export function initializePlayerService(): void {
     "fullscreenButton"
   ) as HTMLButtonElement | null;
 
-  if (
-    !video ||
-    !muteButton ||
-    !volumeSlider ||
-    !pipButton ||
-    !fullscreenButton ||
-    !qualitySelect ||
-    !audioTrackSelect ||
-    !retryButton ||
-    !reportCurrentStreamButton
-  ) {
+  if (!video) {
     return;
   }
 
@@ -441,11 +507,13 @@ export function initializePlayerService(): void {
   const { preferences, currentChannel } = appStore.getState().player;
   videoElement.volume = preferences.volume;
   videoElement.muted = preferences.muted;
-  volumeSlider.value = preferences.volume.toString();
+  if (volumeSlider) {
+    volumeSlider.value = preferences.volume.toString();
+  }
   updateMuteButton();
   renderPlayerState();
 
-  pipButton.addEventListener("click", async () => {
+  pipButton?.addEventListener("click", async () => {
     try {
       if (!document.pictureInPictureEnabled) {
         throw new Error("Picture-in-picture is not supported in this browser.");
@@ -461,7 +529,7 @@ export function initializePlayerService(): void {
     }
   });
 
-  fullscreenButton.addEventListener("click", () => {
+  fullscreenButton?.addEventListener("click", () => {
     if (!document.fullscreenElement) {
       void videoElement.requestFullscreen();
     } else {
@@ -469,7 +537,7 @@ export function initializePlayerService(): void {
     }
   });
 
-  muteButton.addEventListener("click", () => {
+  muteButton?.addEventListener("click", () => {
     if (!video) {
       return;
     }
@@ -479,7 +547,7 @@ export function initializePlayerService(): void {
     persistPreferences();
   });
 
-  volumeSlider.addEventListener("input", (event) => {
+  volumeSlider?.addEventListener("input", (event) => {
     if (!video) {
       return;
     }
@@ -490,7 +558,7 @@ export function initializePlayerService(): void {
     persistPreferences();
   });
 
-  qualitySelect.addEventListener("change", (event) => {
+  qualitySelect?.addEventListener("change", (event) => {
     const selectedQuality = parseInt(
       (event.target as HTMLSelectElement).value,
       10
@@ -503,7 +571,7 @@ export function initializePlayerService(): void {
     }
   });
 
-  audioTrackSelect.addEventListener("change", (event) => {
+  audioTrackSelect?.addEventListener("change", (event) => {
     const selectedAudioTrack = parseInt(
       (event.target as HTMLSelectElement).value,
       10
@@ -516,7 +584,7 @@ export function initializePlayerService(): void {
     }
   });
 
-  retryButton.addEventListener("click", () => {
+  retryButton?.addEventListener("click", () => {
     if (!lastRequestedChannel) {
       return;
     }
@@ -533,7 +601,7 @@ export function initializePlayerService(): void {
     );
   });
 
-  reportCurrentStreamButton.addEventListener("click", () => {
+  reportCurrentStreamButton?.addEventListener("click", () => {
     const channel = appStore.getState().player.currentChannel;
     if (!channel) {
       return;
@@ -584,6 +652,7 @@ export function initializePlayerService(): void {
       return;
     }
 
+    console.log('[PLAYER] Playing channel:', detail.name, detail.url);
     playChannel(detail.url, detail.name);
   });
 

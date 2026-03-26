@@ -1,6 +1,7 @@
 const path = require("path");
 const webpack = require("webpack");
 const { Readable } = require("stream");
+const { pipeline } = require("stream/promises");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
@@ -12,7 +13,15 @@ const STREAM_PROXY_PATH = "/__stream_proxy__";
 
 function copyProxyHeaders(upstreamResponse, response) {
   upstreamResponse.headers.forEach((value, key) => {
-    if (["connection", "keep-alive", "transfer-encoding"].includes(key)) {
+    if (
+      [
+        "connection",
+        "content-encoding",
+        "content-length",
+        "keep-alive",
+        "transfer-encoding",
+      ].includes(key)
+    ) {
       return;
     }
 
@@ -69,7 +78,40 @@ function createStreamProxyMiddleware() {
         return;
       }
 
-      Readable.fromWeb(upstreamResponse.body).pipe(response);
+      const proxyStream = Readable.fromWeb(upstreamResponse.body);
+
+      response.on("close", () => {
+        if (!proxyStream.destroyed) {
+          proxyStream.destroy();
+        }
+      });
+
+      try {
+        await pipeline(proxyStream, response);
+      } catch (error) {
+        const errorCode =
+          error && typeof error === "object" && "code" in error
+            ? error.code
+            : null;
+
+        if (
+          errorCode !== "ERR_STREAM_PREMATURE_CLOSE" &&
+          errorCode !== "UND_ERR_RES_CONTENT_LENGTH_MISMATCH"
+        ) {
+          console.warn("Stream proxy pipeline failed.", error);
+        }
+
+        if (!response.headersSent) {
+          response.statusCode = 502;
+          response.setHeader("Content-Type", "text/plain; charset=utf-8");
+          response.end("Stream proxy request failed.");
+          return;
+        }
+
+        if (!response.destroyed) {
+          response.destroy();
+        }
+      }
     } catch (error) {
       response.statusCode = 502;
       response.setHeader("Content-Type", "text/plain; charset=utf-8");
@@ -133,6 +175,7 @@ module.exports = (_, argv = {}) => {
     plugins: [
       new CleanWebpackPlugin(),
       new webpack.DefinePlugin({
+        __ENABLE_PWA__: JSON.stringify(!isDevelopment),
         __ENABLE_STREAM_PROXY__: JSON.stringify(isDevelopment),
       }),
       new HtmlWebpackPlugin({
@@ -155,6 +198,11 @@ module.exports = (_, argv = {}) => {
           {
             from: "src/workers",
             to: "workers",
+          },
+          {
+            from: "iptv-wasm/pkg",
+            to: "iptv-wasm/pkg",
+            noErrorOnMissing: true,
           },
         ],
       }),
